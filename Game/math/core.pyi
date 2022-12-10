@@ -4,7 +4,8 @@ _vector2d_or_tuple = Union[vector2d, tuple]
 
 
 class scalar:
-    is_limit: bool
+    min: float
+    max: float
     def __init__(self, value: float, limits: tuple) -> None: ...
     @property
     def value(self) -> float: ...
@@ -13,12 +14,7 @@ class scalar:
 
 
 class point2d:
-    def __init__(self,
-                 x: float,
-                 y: float,
-                 x_lim: tuple = None,
-                 y_lim: tuple = None) -> None: ...
-
+    def __init__(self, x: float, y: float, x_lim: tuple = None, y_lim: tuple = None) -> None: ...
     @property
     def x(self) -> float: ...
     @x.setter
@@ -38,12 +34,9 @@ class point2d:
 
 
 class vector2d:
-    def __init__(self,
-                 x: float,
-                 y: float,
-                 max_length: float = 0,
-                 min_length: float = 0) -> None: ...
-
+    min: float
+    max: float
+    def __init__(self, x: float, y: float, max_length: float = 0, min_length: float = 0) -> None: ...
     @property
     def x(self) -> float: ...
     @x.setter

@@ -5,9 +5,8 @@ cdef class CartesianPlane:
     cdef Vector2d parent_vector
     cdef point2d center
     cdef readonly object window
-    cdef readonly double unit_length
     cdef readonly (double, double) window_size
-    cdef readonly double x_min, y_min, x_max, y_max
+    cdef readonly double x_min, y_min, x_max, y_max, unit_length, frame_rate
 
     cpdef Vector2d get_parent_vector(self)
     cpdef point2d get_center_point(self)

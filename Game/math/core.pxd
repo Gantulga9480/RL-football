@@ -1,8 +1,8 @@
 cdef double pi
 
 cdef class scalar:
-    cdef readonly bint is_limit
-    cdef readonly double min, max, num
+    cdef readonly double min, max
+    cdef double num
 
     cdef void add(self, double o)
     cdef void scale(self, double o)
@@ -25,7 +25,7 @@ cdef class point2d:
 
 cdef class vector2d:
     cdef point2d head
-    cdef readonly double max_length, min_length
+    cdef readonly double max, min
 
     cpdef void add(self, double o)
     cpdef void scale(self, double o)

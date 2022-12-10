@@ -10,11 +10,11 @@ cdef class Shape:
 
     def __cinit__(self, *args, **kwargs):
         self.vertex_count = 0
+        self.color = (0, 0, 0)
 
     def __init__(self, CartesianPlane plane):
         self.window = plane.window
         self.plane = plane
-        self.color = (0, 0, 0)
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
@@ -41,7 +41,7 @@ cdef class Shape:
             for i in range(self.vertex_count):
                 (<Vector2d>self.vertices[i]).scale(factor)
         elif factor < 1:
-            if _min * factor >= self.vertices[0].min_length:
+            if _min * factor >= self.vertices[0].min:
                 for i in range(self.vertex_count):
                     (<Vector2d>self.vertices[i]).scale(factor)
 
@@ -71,14 +71,7 @@ cdef class Line(Shape):
         super().__init__(plane)
 
         self.vertex_count = 1
-
-        cdef list vers = []
-        cdef int i
-
-        for i in range(self.vertex_count):
-            vers.append(Vector2d(self.plane, length, 0, 0, 1))
-
-        self.vertices = np.array(vers, dtype=Vector2d)
+        self.vertices = np.array([Vector2d(self.plane, length, 0, 0, 1)], dtype=Vector2d)
 
     @cython.wraparound(False)
     @cython.boundscheck(False)

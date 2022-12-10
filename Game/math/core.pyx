@@ -9,13 +9,12 @@ pi = 3.141592653589793
 cdef class scalar:
 
     def __cinit__(self, *args, **kwargs):
-        ...
+        self.num = 0
+        self.min = 0
+        self.max = 0
 
-    def __init__(self,
-                 double value,
-                 (double, double) limits=(0, 0)):
+    def __init__(self, double value, (double, double) limits=(0, 0)):
         if limits[0] or limits[1]:
-            self.is_limit = True
             self.min = limits[0]
             self.max = limits[1]
             if value < self.min:
@@ -25,7 +24,6 @@ cdef class scalar:
             else:
                 self.num = value
         else:
-            self.is_limit = False
             self.num = value
 
     @property
@@ -34,7 +32,7 @@ cdef class scalar:
 
     @value.setter
     def value(self, double o):
-        if self.is_limit:
+        if self.max:
             if (self.min <= o) and (o <= self.max):
                 self.num = o
             else:
@@ -55,7 +53,7 @@ cdef class scalar:
         return self.num
 
     cdef void set_value(self, double o):
-        if self.is_limit:
+        if self.max:
             if self.min <= o <= self.max:
                 self.num = o
             else:
@@ -71,11 +69,7 @@ cdef class point2d:
     def __cinit__(self, *args, **kwargs):
         ...
 
-    def __init__(self,
-                 x,
-                 y,
-                 x_lim=(0, 0),
-                 y_lim=(0, 0)):
+    def __init__(self, double x, double y, (double, double) x_lim=(0, 0), (double, double) y_lim=(0, 0)):
         self.x = scalar(x, x_lim)
         self.y = scalar(y, y_lim)
 
@@ -141,16 +135,13 @@ cdef class point2d:
 cdef class vector2d:
 
     def __cinit__(self, *args, **kwargs):
-        ...
+        self.max = 0
+        self.min = 0
 
-    def __init__(self,
-                 double x,
-                 double y,
-                 double max_length = 0,
-                 double min_length = 0):
+    def __init__(self, double x, double y, double max = 0, double min = 0):
         self.head = point2d(x, y)
-        self.max_length = max_length
-        self.min_length = min_length
+        self.max = max
+        self.min = min
 
     @property
     def x(self):
@@ -159,9 +150,9 @@ cdef class vector2d:
     @x.setter
     def x(self, double o):
         cdef double _len = sqrt(o * o + self.head.y.num * self.head.y.num)
-        if self.min_length <= _len:
-            if self.max_length:
-                if _len <= self.max_length:
+        if _len >= self.min:
+            if self.max:
+                if _len <= self.max:
                     self.head.x.set_value(o)
             else:
                 self.head.x.set_value(o)
@@ -173,9 +164,9 @@ cdef class vector2d:
     @y.setter
     def y(self, double o):
         cdef double _len = sqrt(o * o + self.head.x.num * self.head.x.num)
-        if self.min_length <= _len:
-            if self.max_length:
-                if _len <= self.max_length:
+        if _len >= self.min:
+            if self.max:
+                if _len <= self.max:
                     self.head.y.set_value(o)
             else:
                 self.head.y.set_value(o)
@@ -187,9 +178,9 @@ cdef class vector2d:
     @head.setter
     def head(self, (double, double) o):
         cdef double _len = sqrt(o[0]*o[0] + o[1]*o[1])
-        if self.min_length <= _len:
-            if self.max_length:
-                if _len <= self.max_length:
+        if _len >= self.min:
+            if self.max:
+                if _len <= self.max:
                     self.head.x.set_value(o[0])
                     self.head.y.set_value(o[1])
             else:
@@ -201,14 +192,14 @@ cdef class vector2d:
         cdef double x = cos(a) * scale
         cdef double y = sin(a) * scale
         if vector:
-            return vector2d(x, y, self.max_length, self.min_length)
+            return vector2d(x, y, self.max, self.min)
         return (x, y)
 
     def normal(self, double scale=1, bint vector=True):
         cdef double x = -self.head.y.num * scale
         cdef double y = self.head.x.num * scale
         if vector:
-            return vector2d(x, y, self.max_length, self.min_length)
+            return vector2d(x, y, self.max, self.min)
         return (x, y)
 
     cpdef void set_x_ref(self, scalar o):
@@ -223,9 +214,9 @@ cdef class vector2d:
         cdef double x = o.x.num
         cdef double y = o.y.num
         cdef double _len = sqrt(x*x + y*y)
-        if self.min_length <= _len:
-            if self.max_length:
-                if _len <= self.max_length:
+        if _len >= self.min:
+            if self.max:
+                if _len <= self.max:
                     self.head = o
             else:
                 self.head = o
@@ -243,13 +234,13 @@ cdef class vector2d:
         cdef double a
         cdef (double, double) xy
         if o > 0:
-            if self.max_length:
-                if (self.mag() + o) <= self.max_length:
+            if self.max:
+                if (self.mag() + o) <= self.max:
                     a = self.dir()
                     self.head.x.add(o * cos(a))
                     self.head.y.add(o * sin(a))
                 else:
-                    xy = self.unit_vector(self.max_length)
+                    xy = self.unit_vector(self.max)
                     self.head.x.num = xy[0]
                     self.head.y.num = xy[1]
             else:
@@ -257,12 +248,12 @@ cdef class vector2d:
                 self.head.x.add(o * cos(a))
                 self.head.y.add(o * sin(a))
         elif o < 0:
-            if cabs(o) < (self.mag() - self.min_length):
+            if cabs(o) < (self.mag() - self.min):
                 a = self.dir()
                 self.head.x.add(o * cos(a))
                 self.head.y.add(o * sin(a))
             else:
-                xy = self.unit_vector(self.min_length)
+                xy = self.unit_vector(self.min)
                 self.head.x.num = xy[0]
                 self.head.y.num = xy[1]
 
@@ -270,23 +261,23 @@ cdef class vector2d:
         cdef (double, double) xy
         cdef double v_len = self.mag()
         if o > 1:
-            if self.max_length:
-                if (v_len * o) < self.max_length:
+            if self.max:
+                if (v_len * o) < self.max:
                     self.head.x.scale(o)
                     self.head.y.scale(o)
                 else:
-                    xy = self.unit_vector(self.max_length)
+                    xy = self.unit_vector(self.max)
                     self.head.x.num = xy[0]
                     self.head.y.num = xy[1]
             else:
                 self.head.x.scale(o)
                 self.head.y.scale(o)
-        elif o < 1:
-            if (v_len * o) > self.min_length:
+        elif 0 <= o < 1:
+            if (v_len * o) > self.min:
                 self.head.x.scale(o)
                 self.head.y.scale(o)
             else:
-                xy = self.unit_vector(self.min_length)
+                xy = self.unit_vector(self.min)
                 self.head.x.num = xy[0]
                 self.head.y.num = xy[1]
 
@@ -319,27 +310,27 @@ cdef class vector2d:
 
     cdef void set_x(self, double o):
         cdef double _len = sqrt(o * o + self.head.y.num * self.head.y.num)
-        if self.min_length <= _len:
-            if self.max_length:
-                if _len <= self.max_length:
+        if _len >= self.min:
+            if self.max:
+                if _len <= self.max:
                     self.head.x.set_value(o)
             else:
                 self.head.x.set_value(o)
 
     cdef void set_y(self, double o):
         cdef double _len = sqrt(o * o + self.head.x.num * self.head.x.num)
-        if self.min_length <= _len:
-            if self.max_length:
-                if _len <= self.max_length:
+        if _len >= self.min:
+            if self.max:
+                if _len <= self.max:
                     self.head.y.set_value(o)
             else:
                 self.head.y.set_value(o)
 
     cdef void set_head(self, (double, double) o):
         cdef double _len = sqrt(o[0]*o[0] + o[1]*o[1])
-        if _len >= self.min_length:
-            if self.max_length:
-                if _len <= self.max_length:
+        if _len >= self.min:
+            if self.max:
+                if _len <= self.max:
                     self.head.x.set_value(o[0])
                     self.head.y.set_value(o[1])
             else:

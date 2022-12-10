@@ -3,7 +3,7 @@ from Game.graphic.cartesian cimport CartesianPlane, Vector2d
 
 cdef class Shape:
 
-    cdef readonly object window
+    cdef object window
     cdef readonly CartesianPlane plane
     cdef readonly int vertex_count
     cdef readonly Vector2d[:] vertices

@@ -16,6 +16,6 @@ def find_pyx(path='.'):
 
 setup(ext_modules=cythonize(find_pyx(),
                             language_level=3,
-                            annotate=True),
+                            annotate=False),
       packages=find_packages(),
       include_dirs=[np.get_include()])
