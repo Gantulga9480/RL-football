@@ -54,14 +54,14 @@ class Game:
         ...
 
     def __eventHandler(self):
+        self.mouse_x, self.mouse_y = pg.mouse.get_pos()
+        self.keys = pg.key.get_pressed()
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 self.running = False
                 break
             else:
                 self.onEvent(event)
-        self.mouse_x, self.mouse_y = pg.mouse.get_pos()
-        self.keys = pg.key.get_pressed()
 
     def onEvent(self, event):
         """ User should override this method """
