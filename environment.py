@@ -105,17 +105,24 @@ class Playground(Game):
         #     player.accelerate(r1)
         #     player.rotate(r)
 
+        dists = []
+        idx = []
         for i, player in enumerate(self.players):
             d = player.shape.plane.get_parent_vector().distance_to(self.ball.shape.plane.get_parent_vector())
             if (d <= (player.radius + self.ball.radius)):
-                if player.kicked:
-                    pass
-                else:
-                    if not self.ball.is_attached:
-                        player.attach(self.ball, False)
-                        self.current_player = i
+                dists.append(d)
+                idx.append(i)
             else:
                 player.kicked = False
+        if idx.__len__() > 0:
+            p_idx = idx[np.argmin(dists)]
+            player = self.players[p_idx]
+            if player.kicked:
+                pass
+            else:
+                if not self.ball.is_attached:
+                    player.attach(self.ball, False)
+                    self.current_player = p_idx
 
     def onEvent(self, event):
         if event.type == core.KEYUP:
