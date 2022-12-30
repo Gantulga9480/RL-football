@@ -13,6 +13,10 @@ class Ball(FreePolygonBody):
     def __init__(self, id: int, plane: CartesianPlane, size: tuple, max_speed: float = 0, drag_coef: float = 0) -> None:
         super().__init__(id, plane, size, max_speed, drag_coef)
 
+    def show(self, vertex: bool = False, velocity: bool = False) -> None:
+        core.draw.circle(self.shape.plane.window, (255, 0, 0), self.velocity.TAIL, self.radius)
+        super().show(vertex, velocity)
+
 
 class Player(DynamicPolygonBody):
 
@@ -25,8 +29,8 @@ class Player(DynamicPolygonBody):
 class Playground(Game):
 
     PLAYER_COUNT = 10
-    PLAYER_SIZE = 20
-    BALL_SIZE = 5
+    PLAYER_SIZE = 10
+    BALL_SIZE = 3
 
     def __init__(self) -> None:
         super().__init__()
@@ -46,7 +50,7 @@ class Playground(Game):
     def setup(self):
         self.plane = CartesianPlane(self.window, self.size, frame_rate=self.fps)
         self.b_plane = self.plane.createPlane(0, 400)
-        self.ball = Ball(0, self.b_plane, (self.BALL_SIZE,)*10, 20, drag_coef=0.01)
+        self.ball = Ball(0, self.b_plane, (self.BALL_SIZE,)*10, drag_coef=0.01)
         self.bodies.append(self.ball)
         for i in range(self.PLAYER_COUNT):
             pp = self.plane.createPlane(-400+i*self.PLAYER_SIZE*2, 0)
@@ -126,6 +130,8 @@ class Playground(Game):
 
     def onEvent(self, event):
         if event.type == core.KEYUP:
+            if event.key == core.K_q:
+                self.running = False
             if event.key == core.K_f:
                 if self.current_player != -1:
                     p = self.players[self.current_player]
