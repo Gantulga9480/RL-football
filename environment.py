@@ -8,9 +8,17 @@ from Game.physics import EnginePolygon
 import numpy as np
 
 
+TEAM_COLOR = [(0, 162, 232), (34, 177, 76)]
+
+
 class Ball(FreePolygonBody):
 
-    def __init__(self, id: int, plane: CartesianPlane, size: tuple, max_speed: float = 0, drag_coef: float = 0) -> None:
+    def __init__(self,
+                 id: int,
+                 plane: CartesianPlane,
+                 size: tuple,
+                 max_speed: float = 0,
+                 drag_coef: float = 0) -> None:
         super().__init__(id, plane, size, max_speed, drag_coef)
 
     def show(self, vertex: bool = False, velocity: bool = False) -> None:
@@ -20,27 +28,44 @@ class Ball(FreePolygonBody):
 
 class Player(DynamicPolygonBody):
 
-    def __init__(self, id: int, plane: CartesianPlane, size: tuple, max_speed: float = 1, drag_coef: float = 0.03, friction_coef: float = 0.3) -> None:
+    def __init__(self,
+                 id: int,
+                 team_id: int,
+                 plane: CartesianPlane,
+                 size: tuple,
+                 max_speed: float = 1,
+                 drag_coef: float = 0.03,
+                 friction_coef: float = 0.3) -> None:
         super().__init__(id, plane, size, max_speed, drag_coef, friction_coef)
         self.kicked = False
-        self.power = 0
+        self.team_id = team_id
+
+    def kick(self, ball: Ball, power: float):
+        self.detach(ball)
+        d = self.velocity.dir()
+        power += 1
+        ball.velocity.head = (power*np.cos(d), power*np.sin(d))
+        self.kicked = True
+
+    def show(self, vertex: bool = False, velocity: bool = False) -> None:
+        core.draw.circle(self.shape.plane.window, TEAM_COLOR[self.team_id], self.velocity.TAIL, self.radius)
+        super().show(vertex, velocity)
 
 
 class Playground(Game):
 
-    PLAYER_COUNT = 10
+    TEAM_COUNT = 2
+    TEAM_SIZE = 5  # in one team
     PLAYER_SIZE = 10
     BALL_SIZE = 3
 
     def __init__(self) -> None:
         super().__init__()
         self.size = (1920, 1080)
-        self.fps = 60
+        self.fps = 120
         self.set_window()
         self.set_title(self.title)
 
-        self.p_plane: list[CartesianPlane] = []
-        self.b_plane: CartesianPlane = None
         self.players: list[Player] = []
         self.ball: Ball = None
         self.bodies: list[Body] = []
@@ -49,15 +74,23 @@ class Playground(Game):
 
     def setup(self):
         self.plane = CartesianPlane(self.window, self.size, frame_rate=self.fps)
-        self.b_plane = self.plane.createPlane(0, 400)
-        self.ball = Ball(0, self.b_plane, (self.BALL_SIZE,)*10, drag_coef=0.01)
-        self.bodies.append(self.ball)
-        for i in range(self.PLAYER_COUNT):
-            pp = self.plane.createPlane(-400+i*self.PLAYER_SIZE*2, 0)
-            self.p_plane.append(pp)
-            p = Player(i+1, pp, (self.PLAYER_SIZE,)*5, 10)
+        for i in range(self.TEAM_SIZE):
+            player_plane = self.plane.createPlane(-400+i*self.PLAYER_SIZE*2, 0)
+            p = Player(i+1, 0, player_plane, (self.PLAYER_SIZE,)*5, 10)
             self.bodies.append(p)
             self.players.append(p)
+
+        for i in range(self.TEAM_SIZE):
+            player_plane = self.plane.createPlane(400+i*self.PLAYER_SIZE*2, 0)
+            p = Player(i+1+self.TEAM_COUNT, 1, player_plane, (self.PLAYER_SIZE,)*5, 10)
+            self.bodies.append(p)
+            self.players.append(p)
+
+        bplane = self.plane.createPlane(0, 0)
+        self.ball = Ball(0, bplane, (self.BALL_SIZE,)*10, drag_coef=0.01)
+        ball_1 = Player(1000, 1, bplane.createPlane(-320, 0), (self.PLAYER_SIZE,)*5, 10)
+        self.bodies.append(self.ball)
+        self.bodies.append(ball_1)
 
         y = self.size[1] / 2
         for _ in range(28):
@@ -99,9 +132,9 @@ class Playground(Game):
         if self.keys[core.K_RIGHT]:
             self.players[0].rotate(-5)
 
-        if self.keys[core.K_f]:
-            if self.current_player != -1:
-                self.players[self.current_player].power += 0.1
+        # if self.keys[core.K_f]:
+        #     if self.current_player != -1:
+        #         self.players[self.current_player].power += 0.1`
 
         # for player in self.players:
         #     r = np.random.random() * 5 - 2.5
@@ -134,12 +167,7 @@ class Playground(Game):
                 self.running = False
             if event.key == core.K_f:
                 if self.current_player != -1:
-                    p = self.players[self.current_player]
-                    p.detach(self.ball)
-                    d = p.velocity.dir()
-                    self.ball.velocity.head = (p.power*np.cos(d), p.power*np.sin(d))
-                    p.kicked = True
-                    p.power = 0
+                    self.players[self.current_player].kick(self.ball, 5)
                     self.current_player = -1
 
     def onRender(self):
