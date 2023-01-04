@@ -34,7 +34,7 @@ cdef class EnginePolygon:
                         # Bodies that have same id will be skipped
                         if self.bodies[i].id != self.bodies[j].id:
                             # radius1 + radius2 >= distance between body2 and body1 means we have some work to do
-                            if (self.bodies[i].radius + self.bodies[j].radius) >= ((<Body>self.bodies[i]).shape.plane.parent_vector.distance_to((<Body>self.bodies[j]).shape.plane.parent_vector)):
+                            if (self.bodies[i].radius + self.bodies[j].radius) >= ((<Body>self.bodies[i]).shape.plane.parent_vector.dist((<Body>self.bodies[j]).shape.plane.parent_vector)):
                                 self.collider.check(<Body>self.bodies[i], <Body>self.bodies[j])
             # Throw body on to screen
             (<Body>self.bodies[i]).show()
