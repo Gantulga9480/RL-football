@@ -25,7 +25,6 @@ cdef class CartesianPlane:
 cdef class Vector2d(vector2d):
 
     cdef readonly CartesianPlane plane
-    cdef readonly object window
     cdef point2d headXY
 
     cpdef double dist(self, Vector2d vector)

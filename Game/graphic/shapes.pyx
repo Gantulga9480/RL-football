@@ -13,7 +13,6 @@ cdef class Shape:
         self.color = (0, 0, 0)
 
     def __init__(self, CartesianPlane plane):
-        self.window = plane.window
         self.plane = plane
 
     @cython.wraparound(False)
@@ -59,7 +58,7 @@ cdef class Shape:
         else:
             for i in range(self.vertex_count):
                 heads.append((<Vector2d>self.vertices[i]).get_HEAD())
-        aalines(self.window, self.color, True, heads)
+        aalines(self.plane.window, self.color, True, heads)
 
 @cython.optimize.unpack_method_calls(False)
 cdef class Line(Shape):
@@ -93,7 +92,7 @@ cdef class Line(Shape):
     @cython.initializedcheck(False)
     def show(self, show_vertex=False):
         (<Vector2d>self.vertices[0]).update()
-        aaline(self.window, self.color, self.plane.center.get_xy(), (<Vector2d>self.vertices[0]).headXY.get_xy())
+        aaline(self.plane.window, self.color, self.plane.center.get_xy(), (<Vector2d>self.vertices[0]).headXY.get_xy())
 
 @cython.optimize.unpack_method_calls(False)
 cdef class Rectangle(Shape):

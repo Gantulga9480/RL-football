@@ -141,7 +141,6 @@ cdef class Vector2d(vector2d):
         ...
 
     def __init__(self, CartesianPlane plane, double x=1, double y=0, double max=0, double min=0):
-        self.window = plane.window
         self.plane = plane
         self.headXY = point2d(0, 0)
         super().__init__(x, y, max, min)
@@ -174,7 +173,7 @@ cdef class Vector2d(vector2d):
     @cython.optimize.unpack_method_calls(False)
     def show(self, color=(0, 0, 0)):
         self.update()
-        aaline(self.window, color, self.plane.center.get_xy(), self.headXY.get_xy())
+        aaline(self.plane.window, color, self.plane.center.get_xy(), self.headXY.get_xy())
 
     def unit(self, double scale=1, bint vector=True):
         cdef (double, double) xy = self.unit_vector(scale)

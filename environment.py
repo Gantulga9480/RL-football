@@ -34,7 +34,7 @@ class Player(DynamicPolygonBody):
                  plane: CartesianPlane,
                  size: tuple,
                  max_speed: float = 1,
-                 drag_coef: float = 0.03,
+                 drag_coef: float = 0.01,
                  friction_coef: float = 0.3) -> None:
         super().__init__(id, plane, size, max_speed, drag_coef, friction_coef)
         self.kicked = False
@@ -56,8 +56,11 @@ class Playground(Game):
 
     TEAM_COUNT = 2
     TEAM_SIZE = 5  # in one team
-    PLAYER_SIZE = 10
+
     BALL_SIZE = 3
+
+    PLAYER_SIZE = 10
+    PLAYER_SPEED = 3
 
     def __init__(self) -> None:
         super().__init__()
@@ -76,21 +79,18 @@ class Playground(Game):
         self.plane = CartesianPlane(self.window, self.size, frame_rate=self.fps)
         for i in range(self.TEAM_SIZE):
             player_plane = self.plane.createPlane(-400+i*self.PLAYER_SIZE*2, 0)
-            p = Player(i+1, 0, player_plane, (self.PLAYER_SIZE,)*5, 10)
+            p = Player(i+1, 0, player_plane, (self.PLAYER_SIZE,)*5, self.PLAYER_SPEED)
             self.bodies.append(p)
             self.players.append(p)
 
         for i in range(self.TEAM_SIZE):
             player_plane = self.plane.createPlane(400+i*self.PLAYER_SIZE*2, 0)
-            p = Player(i+1+self.TEAM_COUNT, 1, player_plane, (self.PLAYER_SIZE,)*5, 10)
+            p = Player(i+1+self.TEAM_COUNT, 1, player_plane, (self.PLAYER_SIZE,)*5, self.PLAYER_SPEED)
             self.bodies.append(p)
             self.players.append(p)
 
-        bplane = self.plane.createPlane(0, 0)
-        self.ball = Ball(0, bplane, (self.BALL_SIZE,)*10, drag_coef=0.01)
-        ball_1 = Player(1000, 1, bplane.createPlane(-320, 0), (self.PLAYER_SIZE,)*5, 10)
+        self.ball = Ball(0, self.plane.createPlane(0, 0), (self.BALL_SIZE,)*10, drag_coef=0.01)
         self.bodies.append(self.ball)
-        self.bodies.append(ball_1)
 
         y = self.size[1] / 2
         for _ in range(28):
@@ -123,14 +123,16 @@ class Playground(Game):
         self.engine = EnginePolygon(self.plane, np.array(self.bodies, dtype=Body))
 
     def loop(self):
+        speed = self.players[0].speed()
+        print(speed)
         if self.keys[core.K_UP]:
             self.players[0].accelerate(5)
         if self.keys[core.K_DOWN]:
-            self.players[0].accelerate(-2)
+            self.players[0].accelerate(-0.1)
         if self.keys[core.K_LEFT]:
-            self.players[0].rotate(5)
+            self.players[0].rotate(5/(speed+1))
         if self.keys[core.K_RIGHT]:
-            self.players[0].rotate(-5)
+            self.players[0].rotate(-5/(speed+1))
 
         # if self.keys[core.K_f]:
         #     if self.current_player != -1:
@@ -159,6 +161,7 @@ class Playground(Game):
             else:
                 if not self.ball.is_attached:
                     player.attach(self.ball, False)
+                    player.velocity.max = 2
                     self.current_player = p_idx
 
     def onEvent(self, event):
@@ -168,6 +171,7 @@ class Playground(Game):
             if event.key == core.K_f:
                 if self.current_player != -1:
                     self.players[self.current_player].kick(self.ball, 5)
+                    self.players[self.current_player].velocity.max = self.PLAYER_SPEED
                     self.current_player = -1
 
     def onRender(self):
