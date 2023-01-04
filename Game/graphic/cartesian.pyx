@@ -1,7 +1,7 @@
 import cython
 from pygame.draw import line, aaline
 from Game.math.core cimport scalar, point2d, vector2d
-from libc.math cimport floor
+from libc.math cimport floor, sqrt
 from random import random
 
 
@@ -187,6 +187,12 @@ cdef class Vector2d(vector2d):
         if vector:
             return Vector2d(self.plane, xy[0], xy[1], self.max, self.min)
         return xy
+
+    cpdef double dist(self, Vector2d vector):
+        self.update()
+        cdef double dx = self.headXY.x.num - vector.headXY.x.num
+        cdef double dy = self.headXY.y.num - vector.headXY.y.num
+        return sqrt(dx*dx + dy*dy)
 
     cpdef void random(self):
         # TODO Fix null vector creation
