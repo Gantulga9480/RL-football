@@ -22,6 +22,7 @@ class Ball(FreePolygonBody):
                  max_speed: float = 0,
                  drag_coef: float = 0) -> None:
         super().__init__(id, plane, size, max_speed, drag_coef)
+        self.is_free = True
 
     def show(self, vertex: bool = False, velocity: bool = False) -> None:
         self.step()
@@ -46,22 +47,26 @@ class Player(DynamicPolygonBody):
                  drag_coef: float = 0.01,
                  friction_coef: float = 0.3) -> None:
         super().__init__(id, plane, size, max_speed, drag_coef, friction_coef)
-        self.kicked = False
         self.team_id = team_id
+        self.kicked = False
+        self.has_ball = False
 
     def kick(self, ball: Ball, power: float):
-        self.detach(ball)
-        d = self.velocity.dir()
         power += 1
-        p = self.shape.plane.get_parent_vector().plane.get_parent_vector().plane
-        pos = ball.shape.plane.CENTER
-        ball = Ball(0, p.createPlane())
+        d = self.velocity.dir()
         ball.velocity.head = (power*np.cos(d), power*np.sin(d))
+        pos = ball.shape.plane.get_parent_vector().plane.to_xy(self.shape.plane.CENTER)
+        ball.shape.plane.get_parent_vector().head = pos
+        ball.is_free = True
         self.kicked = True
+        self.has_ball = False
 
     def show(self, vertex: bool = False, velocity: bool = False) -> None:
         core.draw.circle(self.shape.plane.window, TEAM_COLOR[self.team_id], self.velocity.TAIL, self.radius)
         super().show(vertex, velocity)
+        if self.has_ball:
+            core.draw.circle(self.shape.plane.window, (255, 0, 0), self.velocity.TAIL, 3)
+            core.draw.circle(self.shape.plane.window, (0, 0, 0), self.velocity.TAIL, 3, 1)
 
 
 class Team:
@@ -115,6 +120,7 @@ class Playground(Game):
         self.create_wall()
 
         self.teams.append(Team(TEAM_GREEN, self.TEAM_SIZE, self.plane, self.players))
+        self.teams.append(Team(TEAM_BLUE, self.TEAM_SIZE, self.plane, self.players))
 
         for player in self.players:
             self.bodies.append(player)
@@ -125,50 +131,23 @@ class Playground(Game):
         self.engine = EnginePolygon(self.plane, np.array(self.bodies, dtype=Body))
 
     def loop(self):
+        self.check_ball()
+
         speed = self.players[0].speed()
         if self.keys[core.K_UP]:
             self.players[0].accelerate(5)
         if self.keys[core.K_DOWN]:
-            self.players[0].accelerate(-0.1)
+            self.players[0].accelerate(-1)
         if self.keys[core.K_LEFT]:
             self.players[0].rotate(Player.PLAYER_MAX_TURN_RATE/(speed+1))
         if self.keys[core.K_RIGHT]:
             self.players[0].rotate(-Player.PLAYER_MAX_TURN_RATE/(speed+1))
 
-        # if self.keys[core.K_f]:
-        #     if self.current_player != -1:
-        #         self.players[self.current_player].power += 0.1`
-
         # for player in self.players:
-        #     r = np.random.random() * 5 - 2.5
+        #     r = np.random.random() * 2 - 5
         #     r1 = np.random.random() * 20 - 10
         #     player.accelerate(r1)
         #     player.rotate(r)
-
-        if not self.ball.is_attached:
-            dists = []
-            idx = []
-            for i, player in enumerate(self.players):
-                d = player.shape.plane.get_parent_vector().dist(self.ball.shape.plane.get_parent_vector())
-                if (d <= (player.radius + self.ball.radius)):
-                    dists.append(d)
-                    idx.append(i)
-                else:
-                    player.kicked = False
-            if idx.__len__() > 0:
-                p_idx = idx[np.argmin(dists)]
-                player = self.players[p_idx]
-                print(self.ball.is_attached)
-                if player.kicked:
-                    pass
-                else:
-                    pos = self.ball.shape.plane.CENTER
-                    pos = self.teams[0].plane.to_xy(pos)
-                    self.ball = Ball(0, self.teams[0].plane.createPlane(pos[0], pos[1]), (self.BALL_SIZE,)*10, drag_coef=0.01)
-                    self.ball.velocity.head = (1, 0)
-                    player.attach(self.ball, False)
-                    player.velocity.max = Player.PLAYER_SPEED_BALL
-                    self.current_player = p_idx
 
     def onEvent(self, event):
         if event.type == core.KEYUP:
@@ -185,7 +164,8 @@ class Playground(Game):
         self.plane.show()
         self.teams[0].show()
         self.engine.step()
-        self.ball.show()
+        if self.ball.is_free:
+            self.ball.show()
         p1 = self.players[0]
         p1_plane = p1.shape.plane
         unit = p1.velocity.unit(100, vector=False)
@@ -195,7 +175,6 @@ class Playground(Game):
         vv2.rotate(-Player.PLAYER_MAX_FOV/2/180*np.pi)
         vv1.show()
         vv2.show()
-        self.ball.shape.plane.get_parent_vector().show()
         for player in self.players[1:]:
             pos = player.shape.plane.CENTER
             pos = p1_plane.to_xy(pos)
@@ -204,17 +183,41 @@ class Playground(Game):
             if ab < Player.PLAYER_MAX_FOV/2:
                 v.show()
 
+    def check_ball(self):
+        if self.ball.is_free:
+            dists = []
+            idx = []
+            for i, player in enumerate(self.players):
+                d = player.shape.plane.get_parent_vector().dist(self.ball.shape.plane.get_parent_vector())
+                if (d <= (player.radius + self.ball.radius)):
+                    dists.append(d)
+                    idx.append(i)
+                else:
+                    player.kicked = False
+            if idx.__len__() > 0:
+                p_idx = idx[np.argmin(dists)]
+                player = self.players[p_idx]
+                if player.kicked:
+                    pass
+                else:
+                    self.ball.velocity.head = (1, 0)
+                    self.ball.is_free = False
+                    player.kicked = False
+                    player.has_ball = True
+                    player.velocity.max = Player.PLAYER_SPEED_BALL
+                    self.current_player = p_idx
+
     def create_wall(self):
         y = self.size[1] / 2
         for _ in range(28):
             vec = self.plane.createVector(-self.size[0]/2, y)
             self.bodies.append(
-                StaticRectangleBody(0,
+                StaticRectangleBody(-1,
                                     CartesianPlane(self.window, (40, 40), vec),
                                     (40, 40)))
             vec = self.plane.createVector(self.size[0]/2, y)
             self.bodies.append(
-                StaticRectangleBody(0,
+                StaticRectangleBody(-1,
                                     CartesianPlane(self.window, (40, 40), vec),
                                     (40, 40)))
             y -= 40
@@ -223,12 +226,12 @@ class Playground(Game):
         for _ in range(47):
             vec = self.plane.createVector(x, self.size[1] / 2)
             self.bodies.append(
-                StaticRectangleBody(0,
+                StaticRectangleBody(-1,
                                     CartesianPlane(self.window, (40, 40), vec),
                                     (40, 40)))
             vec = self.plane.createVector(x, -self.size[1] / 2)
             self.bodies.append(
-                StaticRectangleBody(0,
+                StaticRectangleBody(-1,
                                     CartesianPlane(self.window, (40, 40), vec),
                                     (40, 40)))
             x += 40
