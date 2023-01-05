@@ -189,6 +189,7 @@ cdef class Vector2d(vector2d):
 
     cpdef double dist(self, Vector2d vector):
         self.update()
+        vector.update()
         cdef double dx = self.headXY.x.num - vector.headXY.x.num
         cdef double dy = self.headXY.y.num - vector.headXY.y.num
         return sqrt(dx*dx + dy*dy)
