@@ -11,7 +11,14 @@ import numpy as np
 TEAM_COLOR = [(0, 162, 232), (34, 177, 76)]
 TEAM_LEFT = 0
 TEAM_RIGHT = 1
-TEAMS = [TEAM_LEFT, TEAM_RIGHT]
+
+# Actions
+KICK = 0
+GO_FORWARD = 1
+STOP = 2
+TURN_LEFT = 3
+TURN_RIGHT = 4
+ACTIONS = [KICK, GO_FORWARD, STOP, TURN_LEFT, TURN_RIGHT]
 
 
 class Ball(FreePolygonBody):
@@ -36,7 +43,7 @@ class Player(DynamicPolygonBody):
     PLAYER_SIZE = 10
     PLAYER_MAX_SPEED = 2.5
     PLAYER_SPEED_BALL = 2
-    PLAYER_MAX_TURN_RATE = 3
+    PLAYER_MAX_TURN_RATE = 5
     PLAYER_MAX_FOV = 120
 
     def __init__(self,
@@ -101,9 +108,9 @@ class Team:
         self.plane.show()
 
 
-class Playground(Game):
+class SinglePlayer(Game):
 
-    TEAM_SIZE = 5  # in one team
+    TEAM_SIZE = 1  # in one team
     BALL_SIZE = 3
 
     def __init__(self) -> None:
@@ -112,6 +119,7 @@ class Playground(Game):
         self.fps = 120
         self.set_window()
         self.set_title(self.title)
+        self.done = False
 
         self.teams: list[Team] = []
         self.players: list[Player] = []
@@ -121,49 +129,75 @@ class Playground(Game):
 
         self.bodies: list[Body] = []
 
+        self.counter = 0
+
     def setup(self):
         self.plane = CartesianPlane(self.window, self.size, frame_rate=self.fps)
         self.create_wall()
 
-        for team in TEAMS:
-            self.teams.append(Team(team, self.TEAM_SIZE, self.plane, self.players))
+        self.teams.append(Team(TEAM_RIGHT, self.TEAM_SIZE, self.plane, self.players))
 
         for player in self.players:
             self.bodies.append(player)
 
         self.engine = EnginePolygon(self.plane, np.array(self.bodies, dtype=Body))
 
-        self.ball = Ball(0, self.plane.createPlane(0, 0), (self.BALL_SIZE,) * 10, drag_coef=0.01)
+        self.ball = Ball(0, self.plane.createPlane(650, 0), (self.BALL_SIZE,) * 10, drag_coef=0.01)
+
+    def step(self, action):
+        dir_last = self.players[0].direction()
+        if action == KICK:
+            self.players[0].kick(self.ball, 5)
+        elif action == GO_FORWARD:
+            self.players[0].accelerate(5)
+        elif action == STOP:
+            self.players[0].accelerate(-1)
+        elif action == TURN_LEFT:
+            speed = self.players[0].speed()
+            self.players[0].rotate(Player.PLAYER_MAX_TURN_RATE / (speed + 1))
+        elif action == TURN_RIGHT:
+            speed = self.players[0].speed()
+            self.players[0].rotate(-Player.PLAYER_MAX_TURN_RATE / (speed + 1))
+        self.loop_once()
+        dir_now = self.players[0].direction()
+        omega = dir_now - dir_last
+        self.counter += 1
+        if self.counter == (self.fps * 10):
+            self.done = True
+        if self.teams[0].score:
+            self.done = True
+        ball_pos = self.ball.position()
+        player_pos = self.plane.to_xy(self.players[0].shape.plane.CENTER)
+        speed = self.players[0].speed()
+        state = [ball_pos[0], ball_pos[1], player_pos[0], player_pos[1], dir_now, speed, omega]
+        if self.done and self.teams[0].score == 0:
+            reward = -1
+        else:
+            reward = self.teams[0].score
+        return state, reward, self.done
+
+    def reset(self):
+        self.counter = 0
+        self.done = False
+        self.ball.velocity.head = (1, 0)
+        self.ball.shape.plane.get_parent_vector().head = (650, 0)
+        self.players[0].shape.plane.get_parent_vector().head = (-400, 0)
+        print(self.players[0].velocity.dir() / np.pi * 180)
+        self.players[0].velocity.rotate(np.pi / 2 - self.players[0].velocity.dir())
+        self.players[0].shape.rotate(np.pi / 2 - self.players[0].velocity.dir())
+        print(self.players[0].velocity.dir() / np.pi * 180)
+        ball_pos = self.ball.position()
+        player_pos = self.plane.to_xy(self.players[0].shape.plane.CENTER)
+        state = [ball_pos[0], ball_pos[1], player_pos[0], player_pos[1], 0, 0]
+        return state
 
     def loop(self):
         self.check_ball()
-
-        speed = self.players[0].speed()
-        if self.keys[core.K_UP]:
-            self.players[0].accelerate(5)
-        if self.keys[core.K_DOWN]:
-            self.players[0].accelerate(-1)
-        if self.keys[core.K_LEFT]:
-            self.players[0].rotate(Player.PLAYER_MAX_TURN_RATE / (speed + 1))
-        if self.keys[core.K_RIGHT]:
-            self.players[0].rotate(-Player.PLAYER_MAX_TURN_RATE / (speed + 1))
-
-        # for player in self.players:
-        #     r = np.random.random() * 2 - 5
-        #     r1 = np.random.random() * 20 - 10
-        #     player.accelerate(r1)
-        #     player.rotate(r)
 
     def onEvent(self, event):
         if event.type == core.KEYUP:
             if event.key == core.K_q:
                 self.running = False
-            if event.key == core.K_f:
-                if self.current_player != -1:
-                    self.players[self.current_player].kick(self.ball, 5)
-                    self.players[self.current_player].velocity.max = Player.PLAYER_MAX_SPEED
-                    self.last_player = self.current_player
-                    self.current_player = -1
 
     def onRender(self):
         width = 1
@@ -183,22 +217,6 @@ class Playground(Game):
         self.engine.step()
         if self.ball.is_free:
             self.ball.show()
-        p1 = self.players[0]
-        p1_plane = p1.shape.plane
-        unit = p1.velocity.unit(100, vector=False)
-        vv1 = p1_plane.createVector(unit[0], unit[1])
-        vv2 = p1_plane.createVector(unit[0], unit[1])
-        vv1.rotate(Player.PLAYER_MAX_FOV / 360 * np.pi)
-        vv2.rotate(-Player.PLAYER_MAX_FOV / 360 * np.pi)
-        vv1.show()
-        vv2.show()
-        for player in self.players[1:]:
-            pos = player.shape.plane.CENTER
-            pos = p1_plane.to_xy(pos)
-            v = p1_plane.createVector(pos[0], pos[1])
-            ab = np.arccos(p1.velocity.dot(v) / (p1.velocity.mag() * v.mag())) / np.pi * 180
-            if ab < Player.PLAYER_MAX_FOV / 2:
-                v.show()
 
     def check_ball(self):
         if self.ball.is_free:
@@ -227,13 +245,13 @@ class Playground(Game):
                 pos = self.ball.position()
                 # Left team scored a goal
                 if (pos[0] < self.plane.x_min + 60 and -70 < pos[1] < 70):
-                    self.ball.velocity.head = (1, 0)
-                    self.ball.shape.plane.get_parent_vector().head = (0, 0)
+                    # self.ball.velocity.head = (1, 0)
+                    # self.ball.shape.plane.get_parent_vector().head = (0, 0)
                     self.teams[TEAM_LEFT].score += 1
                 # Right team scored a goal
                 elif (pos[0] > self.plane.x_max - 60 and -70 < pos[1] < 70):
-                    self.ball.velocity.head = (1, 0)
-                    self.ball.shape.plane.get_parent_vector().head = (0, 0)
+                    # self.ball.velocity.head = (1, 0)
+                    # self.ball.shape.plane.get_parent_vector().head = (0, 0)
                     self.teams[TEAM_RIGHT].score += 1
 
     def create_wall(self, wall_width=120, wall_height=5):
