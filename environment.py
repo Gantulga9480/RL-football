@@ -9,8 +9,8 @@ import numpy as np
 
 
 TEAM_COLOR = [(0, 162, 232), (34, 177, 76)]
-TEAM_BLUE = 0
-TEAM_GREEN = 1
+TEAM_LEFT = 0
+TEAM_RIGHT = 1
 
 
 class Ball(FreePolygonBody):
@@ -54,7 +54,7 @@ class Player(DynamicPolygonBody):
     def kick(self, ball: Ball, power: float):
         power += 1
         d = self.velocity.dir()
-        ball.velocity.head = (power*np.cos(d), power*np.sin(d))
+        ball.velocity.head = (power * np.cos(d), power * np.sin(d))
         pos = ball.shape.plane.get_parent_vector().plane.to_xy(self.shape.plane.CENTER)
         ball.shape.plane.get_parent_vector().head = pos
         ball.is_free = True
@@ -72,25 +72,30 @@ class Player(DynamicPolygonBody):
 class Team:
 
     def __init__(self, team_id: int, team_size: int, plane: CartesianPlane, player_buffer: 'list[Player]') -> None:
+        self.score = 0
         self.team_id = team_id
         self.team_size = team_size
         self.players: list[Player] = []
-        if self.team_id == TEAM_BLUE:
-            self.plane = plane.createPlane(100-plane.CENTER[0], 0)
+        if self.team_id == TEAM_LEFT:
+            self.plane = plane.createPlane(100 - plane.CENTER[0], 0)
             for i in range(self.team_size):
-                player_plane = self.plane.createPlane(400+i*Player.PLAYER_SIZE*2, 0)
-                p = Player(player_buffer.__len__()+i, self.team_id, player_plane, (Player.PLAYER_SIZE,)*5, Player.PLAYER_MAX_SPEED)
+                player_plane = self.plane.createPlane(400 + i * Player.PLAYER_SIZE * 2, 0)
+                p = Player(player_buffer.__len__() + i, self.team_id, player_plane, (Player.PLAYER_SIZE,) * 5, Player.PLAYER_MAX_SPEED)
                 self.players.append(p)
                 player_buffer.append(p)
-        elif self.team_id == TEAM_GREEN:
-            self.plane = plane.createPlane(plane.CENTER[0]-100, 0)
+        elif self.team_id == TEAM_RIGHT:
+            self.plane = plane.createPlane(plane.CENTER[0] - 100, 0)
             for i in range(self.team_size):
-                player_plane = self.plane.createPlane(-400+i*Player.PLAYER_SIZE*2, 0)
-                p = Player(player_buffer.__len__()+i, self.team_id, player_plane, (Player.PLAYER_SIZE,)*5, Player.PLAYER_MAX_SPEED)
+                player_plane = self.plane.createPlane(-400 + i * Player.PLAYER_SIZE * 2, 0)
+                p = Player(player_buffer.__len__() + i, self.team_id, player_plane, (Player.PLAYER_SIZE,) * 5, Player.PLAYER_MAX_SPEED)
                 self.players.append(p)
                 player_buffer.append(p)
 
     def show(self):
+        if self.team_id == TEAM_LEFT:
+            core.draw.rect(self.plane.window, TEAM_COLOR[TEAM_LEFT], (11 + 1, 470 + 1, 50 - 2, 140 - 2))
+        elif self.team_id == TEAM_RIGHT:
+            core.draw.rect(self.plane.window, TEAM_COLOR[TEAM_RIGHT], (1860, 470 + 1, 50 - 2, 140 - 2))
         self.plane.show()
 
 
@@ -98,7 +103,6 @@ class Playground(Game):
 
     TEAM_COUNT = 2
     TEAM_SIZE = 5  # in one team
-
     BALL_SIZE = 3
 
     def __init__(self) -> None:
@@ -111,24 +115,24 @@ class Playground(Game):
         self.teams: list[Team] = []
         self.players: list[Player] = []
         self.ball: Ball = None
-        self.bodies: list[Body] = []
-
         self.current_player = -1
+        self.last_player = -1
+
+        self.bodies: list[Body] = []
 
     def setup(self):
         self.plane = CartesianPlane(self.window, self.size, frame_rate=self.fps)
         self.create_wall()
 
-        self.teams.append(Team(TEAM_GREEN, self.TEAM_SIZE, self.plane, self.players))
-        self.teams.append(Team(TEAM_BLUE, self.TEAM_SIZE, self.plane, self.players))
+        self.teams.append(Team(TEAM_LEFT, self.TEAM_SIZE, self.plane, self.players))
+        self.teams.append(Team(TEAM_RIGHT, self.TEAM_SIZE, self.plane, self.players))
 
         for player in self.players:
             self.bodies.append(player)
 
-        self.ball = Ball(0, self.plane.createPlane(0, 0), (self.BALL_SIZE,)*10, drag_coef=0.01)
-        # self.bodies.append(self.ball)
-
         self.engine = EnginePolygon(self.plane, np.array(self.bodies, dtype=Body))
+
+        self.ball = Ball(0, self.plane.createPlane(0, 0), (self.BALL_SIZE,) * 10, drag_coef=0.01)
 
     def loop(self):
         self.check_ball()
@@ -139,9 +143,9 @@ class Playground(Game):
         if self.keys[core.K_DOWN]:
             self.players[0].accelerate(-1)
         if self.keys[core.K_LEFT]:
-            self.players[0].rotate(Player.PLAYER_MAX_TURN_RATE/(speed+1))
+            self.players[0].rotate(Player.PLAYER_MAX_TURN_RATE / (speed + 1))
         if self.keys[core.K_RIGHT]:
-            self.players[0].rotate(-Player.PLAYER_MAX_TURN_RATE/(speed+1))
+            self.players[0].rotate(-Player.PLAYER_MAX_TURN_RATE / (speed + 1))
 
         # for player in self.players:
         #     r = np.random.random() * 2 - 5
@@ -157,12 +161,24 @@ class Playground(Game):
                 if self.current_player != -1:
                     self.players[self.current_player].kick(self.ball, 5)
                     self.players[self.current_player].velocity.max = Player.PLAYER_MAX_SPEED
+                    self.last_player = self.current_player
                     self.current_player = -1
 
     def onRender(self):
-        self.window.fill((255,)*3)
+        width = 1
+        self.window.fill((255,) * 3)
+        core.draw.rect(self.window, (0,) * 3, (60, 90, 1800, 900), width)  # Touch line
+        core.draw.rect(self.window, (0,) * 3, (60, 367, 100, 346), width)  # Left goal area
+        core.draw.rect(self.window, (0,) * 3, (1760, 367, 100, 346), width)  # Right goal area
+        core.draw.rect(self.window, (0,) * 3, (60, 149, 321, 783), width)  # Left penalty area
+        core.draw.rect(self.window, (0,) * 3, (1539, 149, 321, 783), width)  # Right penalty area
+        core.draw.circle(self.window, (0, 0, 0), (960, 540), 180, width)
+        core.draw.line(self.window, (0,) * 3, (960, 90), (960, 989))
+        core.draw.rect(self.window, (0, 0, 0), (11, 470, 50, 140), width)
+        core.draw.rect(self.window, (0, 0, 0), (1859, 470, 50, 140), width)
         self.plane.show()
-        self.teams[0].show()
+        for team in self.teams:
+            team.show()
         self.engine.step()
         if self.ball.is_free:
             self.ball.show()
@@ -171,16 +187,16 @@ class Playground(Game):
         unit = p1.velocity.unit(100, vector=False)
         vv1 = p1_plane.createVector(unit[0], unit[1])
         vv2 = p1_plane.createVector(unit[0], unit[1])
-        vv1.rotate(Player.PLAYER_MAX_FOV/2/180*np.pi)
-        vv2.rotate(-Player.PLAYER_MAX_FOV/2/180*np.pi)
+        vv1.rotate(Player.PLAYER_MAX_FOV / 360 * np.pi)
+        vv2.rotate(-Player.PLAYER_MAX_FOV / 360 * np.pi)
         vv1.show()
         vv2.show()
         for player in self.players[1:]:
             pos = player.shape.plane.CENTER
             pos = p1_plane.to_xy(pos)
             v = p1_plane.createVector(pos[0], pos[1])
-            ab = np.arccos(p1.velocity.dot(v) / (p1.velocity.mag() * v.mag())) / np.pi*180
-            if ab < Player.PLAYER_MAX_FOV/2:
+            ab = np.arccos(p1.velocity.dot(v) / (p1.velocity.mag() * v.mag())) / np.pi * 180
+            if ab < Player.PLAYER_MAX_FOV / 2:
                 v.show()
 
     def check_ball(self):
@@ -206,32 +222,44 @@ class Playground(Game):
                     player.has_ball = True
                     player.velocity.max = Player.PLAYER_SPEED_BALL
                     self.current_player = p_idx
+            if self.ball.is_free:
+                pos = self.ball.position()
+                # Left team scored a goal
+                if (pos[0] < self.plane.x_min + 60 and -70 < pos[1] < 70):
+                    self.ball.velocity.head = (1, 0)
+                    self.ball.shape.plane.get_parent_vector().head = (0, 0)
+                    self.teams[TEAM_LEFT].score += 1
+                # Right team scored a goal
+                elif (pos[0] > self.plane.x_max - 60 and -70 < pos[1] < 70):
+                    self.ball.velocity.head = (1, 0)
+                    self.ball.shape.plane.get_parent_vector().head = (0, 0)
+                    self.teams[TEAM_RIGHT].score += 1
 
-    def create_wall(self):
-        y = self.size[1] / 2
-        for _ in range(28):
-            vec = self.plane.createVector(-self.size[0]/2, y)
+    def create_wall(self, wall_width=120, wall_height=5):
+        y = self.size[1] // 2 - wall_width // 2 - wall_height // 2
+        for _ in range(self.size[1] // wall_width):
+            vec = self.plane.createVector(-self.size[0] // 2, y)
             self.bodies.append(
                 StaticRectangleBody(-1,
-                                    CartesianPlane(self.window, (40, 40), vec),
-                                    (40, 40)))
-            vec = self.plane.createVector(self.size[0]/2, y)
+                                    CartesianPlane(self.window, (wall_width, wall_width), vec),
+                                    (wall_height, wall_width)))
+            vec = self.plane.createVector(self.size[0] // 2, y)
             self.bodies.append(
                 StaticRectangleBody(-1,
-                                    CartesianPlane(self.window, (40, 40), vec),
-                                    (40, 40)))
-            y -= 40
+                                    CartesianPlane(self.window, (wall_width, wall_width), vec),
+                                    (wall_height, wall_width)))
+            y -= wall_width
 
-        x = -self.size[0]/2 + 40
-        for _ in range(47):
-            vec = self.plane.createVector(x, self.size[1] / 2)
+        x = -self.size[0] // 2 + wall_width // 2
+        for _ in range(self.size[0] // wall_width):
+            vec = self.plane.createVector(x, self.size[1] // 2)
             self.bodies.append(
                 StaticRectangleBody(-1,
-                                    CartesianPlane(self.window, (40, 40), vec),
-                                    (40, 40)))
-            vec = self.plane.createVector(x, -self.size[1] / 2)
+                                    CartesianPlane(self.window, (wall_width, wall_width), vec),
+                                    (wall_width, wall_height)))
+            vec = self.plane.createVector(x, -self.size[1] // 2)
             self.bodies.append(
                 StaticRectangleBody(-1,
-                                    CartesianPlane(self.window, (40, 40), vec),
-                                    (40, 40)))
-            x += 40
+                                    CartesianPlane(self.window, (wall_width, wall_width), vec),
+                                    (wall_width, wall_height)))
+            x += wall_width
