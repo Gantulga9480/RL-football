@@ -1,20 +1,23 @@
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.models import load_model
-from tensorflow.keras.layers import Activation, Dense, Input, Dropout
+from tensorflow.keras.layers import Dense, Input, Dropout
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras import mixed_precision
 from collections import deque
 import numpy as np
 import random
+import os
+
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 class DQN:
 
     LEARNING_RATE = 0.001
     DISCOUNT_RATE = 0.9
-    BATCH_SIZE = 512
-    EPOCHS = 5
+    BATCH_SIZE = 128
+    EPOCHS = 1
     EPSILON_DECAY = 0.99995
     MIN_EPSILON = 0.01
 
@@ -107,7 +110,7 @@ class DQN:
                             epochs=self.EPOCHS,
                             batch_size=self.BATCH_SIZE,
                             shuffle=False,
-                            verbose=0)
+                            verbose=1)
 
 
 class ReplayBuffer:
@@ -119,7 +122,7 @@ class ReplayBuffer:
 
     @property
     def trainable(self):
-        return self.buffer.__len__() > self.min_size
+        return self.buffer.__len__() >= self.min_size
 
     def push(self, data):
         self.buffer.append(data)
@@ -138,8 +141,8 @@ class DoubleReplayBuffer:
 
     @property
     def trainable(self):
-        fn = self.buffer_new.__len__() > self.min_size
-        fo = self.buffer_old.__len__() > self.min_size
+        fn = self.buffer_new.__len__() >= self.min_size
+        fo = self.buffer_old.__len__() >= self.min_size
         return fn and fo
 
     def push(self, data):
