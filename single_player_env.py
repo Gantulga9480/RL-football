@@ -135,6 +135,7 @@ class SinglePlayer(Game):
         self.plane = CartesianPlane(self.window, self.size, frame_rate=self.fps)
         self.create_wall()
 
+        self.teams.append(None)
         self.teams.append(Team(TEAM_RIGHT, self.TEAM_SIZE, self.plane, self.players))
 
         for player in self.players:
@@ -164,31 +165,37 @@ class SinglePlayer(Game):
         self.counter += 1
         if self.counter == (self.fps * 10):
             self.done = True
-        if self.teams[0].score:
+        if self.teams[TEAM_RIGHT].score:
             self.done = True
         ball_pos = self.ball.position()
         player_pos = self.plane.to_xy(self.players[0].shape.plane.CENTER)
         speed = self.players[0].speed()
         state = [ball_pos[0], ball_pos[1], player_pos[0], player_pos[1], dir_now, speed, omega]
-        if self.done and self.teams[0].score == 0:
+        if self.done and self.teams[TEAM_RIGHT].score == 0:
             reward = -1
         else:
-            reward = self.teams[0].score
+            reward = self.teams[TEAM_RIGHT].score
         return state, reward, self.done
 
     def reset(self):
         self.counter = 0
+        self.teams[TEAM_RIGHT].score = 0
         self.done = False
         self.ball.velocity.head = (1, 0)
         self.ball.shape.plane.get_parent_vector().head = (650, 0)
-        self.players[0].shape.plane.get_parent_vector().head = (-400, 0)
-        print(self.players[0].velocity.dir() / np.pi * 180)
-        self.players[0].velocity.rotate(np.pi / 2 - self.players[0].velocity.dir())
-        self.players[0].shape.rotate(np.pi / 2 - self.players[0].velocity.dir())
-        print(self.players[0].velocity.dir() / np.pi * 180)
+        x_lim = self.teams[TEAM_RIGHT].plane.to_xy(self.plane.CENTER)[0]
+        y_lim = 450
+        x = np.random.randint(x_lim, 1)
+        y = np.random.randint(-y_lim, y_lim + 1)
+        self.players[0].shape.plane.get_parent_vector().head = (x, y)
+        dr = np.random.random() * np.pi * 2
+        tmp = dr - self.players[0].velocity.dir()
+        self.players[0].velocity.rotate(tmp)
+        self.players[0].shape.rotate(tmp)
         ball_pos = self.ball.position()
+        dir_now = self.players[0].direction()
         player_pos = self.plane.to_xy(self.players[0].shape.plane.CENTER)
-        state = [ball_pos[0], ball_pos[1], player_pos[0], player_pos[1], 0, 0]
+        state = [ball_pos[0], ball_pos[1], player_pos[0], player_pos[1], dir_now, 0, 0]
         return state
 
     def loop(self):
@@ -198,25 +205,17 @@ class SinglePlayer(Game):
         if event.type == core.KEYUP:
             if event.key == core.K_q:
                 self.running = False
+                self.done = True
 
     def onRender(self):
-        width = 1
-        self.window.fill((255,) * 3)
-        core.draw.rect(self.window, (0,) * 3, (60, 90, 1800, 900), width)  # Touch line
-        core.draw.rect(self.window, (0,) * 3, (60, 367, 100, 346), width)  # Left goal area
-        core.draw.rect(self.window, (0,) * 3, (1760, 367, 100, 346), width)  # Right goal area
-        core.draw.rect(self.window, (0,) * 3, (60, 149, 321, 783), width)  # Left penalty area
-        core.draw.rect(self.window, (0,) * 3, (1539, 149, 321, 783), width)  # Right penalty area
-        core.draw.circle(self.window, (0, 0, 0), (960, 540), 180, width)
-        core.draw.line(self.window, (0,) * 3, (960, 90), (960, 989))
-        core.draw.rect(self.window, (0, 0, 0), (11, 470, 50, 140), width)
-        core.draw.rect(self.window, (0, 0, 0), (1859, 470, 50, 140), width)
+        self.window.fill((255, 255, 255))
+        self.draw_field()
         self.plane.show()
-        for team in self.teams:
-            team.show()
+        self.teams[TEAM_RIGHT].show()
         self.engine.step()
         if self.ball.is_free:
             self.ball.show()
+        self.players[0].velocity.show()
 
     def check_ball(self):
         if self.ball.is_free:
@@ -247,7 +246,8 @@ class SinglePlayer(Game):
                 if (pos[0] < self.plane.x_min + 60 and -70 < pos[1] < 70):
                     # self.ball.velocity.head = (1, 0)
                     # self.ball.shape.plane.get_parent_vector().head = (0, 0)
-                    self.teams[TEAM_LEFT].score += 1
+                    # self.teams[TEAM_LEFT].score += 1
+                    pass
                 # Right team scored a goal
                 elif (pos[0] > self.plane.x_max - 60 and -70 < pos[1] < 70):
                     # self.ball.velocity.head = (1, 0)
@@ -282,3 +282,14 @@ class SinglePlayer(Game):
                                     CartesianPlane(self.window, (wall_width, wall_width), vec),
                                     (wall_width, wall_height)))
             x += wall_width
+
+    def draw_field(self, width=1):
+        core.draw.rect(self.window, (0,) * 3, (60, 90, 1800, 900), width)  # Touch line
+        core.draw.rect(self.window, (0,) * 3, (60, 367, 100, 346), width)  # Left goal area
+        core.draw.rect(self.window, (0,) * 3, (1760, 367, 100, 346), width)  # Right goal area
+        core.draw.rect(self.window, (0,) * 3, (60, 149, 321, 783), width)  # Left penalty area
+        core.draw.rect(self.window, (0,) * 3, (1539, 149, 321, 783), width)  # Right penalty area
+        core.draw.circle(self.window, (0, 0, 0), (960, 540), 180, width)
+        core.draw.line(self.window, (0,) * 3, (960, 90), (960, 989))
+        core.draw.rect(self.window, (0, 0, 0), (11, 470, 50, 140), width)
+        core.draw.rect(self.window, (0, 0, 0), (1859, 470, 50, 140), width)
