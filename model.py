@@ -115,6 +115,24 @@ class ReplayBuffer:
     def __init__(self, max_size, min_size) -> None:
         self.max_size = max_size
         self.min_size = min_size
+        self.buffer = deque(maxlen=max_size)
+
+    @property
+    def trainable(self):
+        return self.buffer.__len__() > self.min_size
+
+    def push(self, data):
+        self.buffer.append(data)
+
+    def sample(self, sample_size):
+        return random.sample(self.buffer, sample_size)
+
+
+class DoubleReplayBuffer:
+
+    def __init__(self, max_size, min_size) -> None:
+        self.max_size = max_size
+        self.min_size = min_size
         self.buffer_new = deque(maxlen=max_size)
         self.buffer_old = deque(maxlen=max_size * 4)
 
