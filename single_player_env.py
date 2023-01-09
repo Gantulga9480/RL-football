@@ -286,7 +286,6 @@ class SinglePlayer(Game):
         self.actions = None
         self.infos = None
         self.env_count = env_count
-        self.train = True
         self.step_count = 0
         for _ in range(self.env_count):
             self.envs.append(Football(self.window, self.size, self.fps))
@@ -294,7 +293,7 @@ class SinglePlayer(Game):
     def setup(self):
         pass
 
-    def step(self, actions):
+    def step(self, actions: 'list[int]' = [STOP]):
         self.actions = actions
         self.loop_once()
         self.step_count += 1

@@ -5,10 +5,12 @@ from model import DQN, ReplayBuffer
 MAX_REPLAY_BUFFER = 24000
 TARGET_NET_UPDATE_FREQ = 300
 MAIN_NET_TRAIN_FREQ = 30
-CURRENT_TRAIN_ID = '2023-01-07'
-ENV_COUNT = 10
+CURRENT_TRAIN_ID = '2023-01-09'
+ENV_COUNT = 5
 
 model = DQN()
+model.train = True
+model.epsilon = 0
 
 replay_buffer = ReplayBuffer(MAX_REPLAY_BUFFER, MAX_REPLAY_BUFFER)
 
@@ -38,20 +40,20 @@ while sim.running:
         states[i] = n_state
         rewards.append(reward)
 
-    if replay_buffer.trainable and sim.train:
+    if replay_buffer.trainable and model.train:
         if sim.step_count % MAIN_NET_TRAIN_FREQ == 0:
-            model.train(replay_buffer.sample(model.BATCH_SIZE))
+            model.fit(replay_buffer.sample(model.BATCH_SIZE))
         model.decay_epsilon()
         if model.epsilon == model.MIN_EPSILON:
             model.epsilon = 0.2
         if sim.step_count % TARGET_NET_UPDATE_FREQ == 0:
             model.update_target()
 
-    # info = ' '.join([
-    #     f'e: {model.epsilon}',
-    #     f'r: {sum(rewards) / ENV_COUNT}'
-    # ])
-    # print(info)
+    info = ' '.join([
+        f'e: {model.epsilon}',
+        f'r: {sum(rewards) / ENV_COUNT}'
+    ])
+    print(info)
 
 # save trained model
 path = '/'.join(['model', CURRENT_TRAIN_ID, 'model'])

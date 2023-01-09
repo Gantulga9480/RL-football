@@ -35,6 +35,7 @@ class DQN:
                 print(e)
 
         self.epsilon = 1
+        self.train = True
 
         if path:
             self.load(path)
@@ -85,7 +86,7 @@ class DQN:
     def decay_epsilon(self):
         self.epsilon = max(self.epsilon * self.EPSILON_DECAY, self.MIN_EPSILON)
 
-    def train(self, samples):
+    def fit(self, samples):
         current_states = np.array([item[0] for item in samples])
         new_current_state = np.array([item[2] for item in samples])
         current_qs_list = []
