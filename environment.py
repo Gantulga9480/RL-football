@@ -104,7 +104,7 @@ class Team:
 class Playground(Game):
 
     TEAM_SIZE = 5  # in one team
-    BALL_SIZE = 3
+    BALL_SIZE = 10
 
     def __init__(self) -> None:
         super().__init__()
@@ -140,13 +140,13 @@ class Playground(Game):
 
         speed = self.players[0].speed()
         if self.keys[core.K_UP]:
-            self.players[0].accelerate(5)
+            self.players[self.current_player].accelerate(5)
         if self.keys[core.K_DOWN]:
-            self.players[0].accelerate(-1)
+            self.players[self.current_player].accelerate(-1)
         if self.keys[core.K_LEFT]:
-            self.players[0].rotate(Player.PLAYER_MAX_TURN_RATE / (speed + 1))
+            self.players[self.current_player].rotate(Player.PLAYER_MAX_TURN_RATE / (speed + 1))
         if self.keys[core.K_RIGHT]:
-            self.players[0].rotate(-Player.PLAYER_MAX_TURN_RATE / (speed + 1))
+            self.players[self.current_player].rotate(-Player.PLAYER_MAX_TURN_RATE / (speed + 1))
 
         # for player in self.players:
         #     r = np.random.random() * 2 - 5
@@ -163,7 +163,7 @@ class Playground(Game):
                     self.players[self.current_player].kick(self.ball, 5)
                     self.players[self.current_player].velocity.max = Player.PLAYER_MAX_SPEED
                     self.last_player = self.current_player
-                    self.current_player = -1
+                    # self.current_player = -1
 
     def onRender(self):
         width = 1
@@ -183,7 +183,7 @@ class Playground(Game):
         self.engine.step()
         if self.ball.is_free:
             self.ball.show()
-        p1 = self.players[0]
+        p1 = self.players[self.current_player]
         p1_plane = p1.shape.plane
         unit = p1.velocity.unit(100, vector=False)
         vv1 = p1_plane.createVector(unit[0], unit[1])
@@ -193,12 +193,13 @@ class Playground(Game):
         vv1.show()
         vv2.show()
         for player in self.players[1:]:
-            pos = player.shape.plane.CENTER
-            pos = p1_plane.to_xy(pos)
-            v = p1_plane.createVector(pos[0], pos[1])
-            ab = np.arccos(p1.velocity.dot(v) / (p1.velocity.mag() * v.mag())) / np.pi * 180
-            if ab < Player.PLAYER_MAX_FOV / 2:
-                v.show()
+            if player != p1:
+                pos = player.shape.plane.CENTER
+                pos = p1_plane.to_xy(pos)
+                v = p1_plane.createVector(pos[0], pos[1])
+                ab = np.arccos(p1.velocity.dot(v) / (p1.velocity.mag() * v.mag())) / np.pi * 180
+                if ab < Player.PLAYER_MAX_FOV / 2:
+                    v.show()
 
     def check_ball(self):
         if self.ball.is_free:
