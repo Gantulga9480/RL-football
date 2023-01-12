@@ -1,6 +1,5 @@
-from single_player_env import SinglePlayer
+from single_player_env import SinglePlayer, ACTIONS, STATE_SPACE_SIZE
 from RL.dqn import DQN, ReplayBuffer
-# from model import DQN, ReplayBuffer
 
 
 MAX_REPLAY_BUFFER = 24000
@@ -9,12 +8,9 @@ MAIN_NET_TRAIN_FREQ = 30
 CURRENT_TRAIN_ID = '2023-01-09'
 ENV_COUNT = 5
 
-model = DQN(0.001, 0.99, 128, 1, False)
-model.create_model([7, 14, 5])
-# model.train = True
-# model.e = 0
-
-replay_buffer = ReplayBuffer(MAX_REPLAY_BUFFER, 256)
+model = DQN(ACTIONS, 0.001, 0.99)
+model.create_model([STATE_SPACE_SIZE, 20, 20, ACTIONS.__len__()], epochs=3, gpu=True)
+model.create_buffer(MAX_REPLAY_BUFFER, model.batchs)
 
 sim = SinglePlayer(ENV_COUNT)
 
@@ -35,21 +31,12 @@ while sim.running:
     infos = sim.step(actions)
 
     for i, info in enumerate(infos):
-        n_state, reward, done = info
         state = states[i]
         action = actions[i]
-        replay_buffer.push([state, action, n_state, reward, done])
+        n_state, reward, done = info
+        model.learn(state, action, n_state, reward, done)
         states[i] = n_state
         rewards.append(reward)
-
-    if replay_buffer.trainable and model.train:
-        if sim.step_count % MAIN_NET_TRAIN_FREQ == 0:
-            model.learn(replay_buffer.sample(model.batchs))
-        model.decay_epsilon(0.99995)
-        if model.e == model.e_min:
-            model.e = 0.2
-        if sim.step_count % TARGET_NET_UPDATE_FREQ == 0:
-            model.update_target()
 
     info = ' '.join([
         f'e: {model.e}',
