@@ -19,7 +19,7 @@ STOP = 2
 TURN_LEFT = 3
 TURN_RIGHT = 4
 ACTIONS = [KICK, GO_FORWARD, STOP, TURN_LEFT, TURN_RIGHT]
-STATE_SPACE_SIZE = 7
+STATE_SPACE_SIZE = 8
 
 
 class Ball(FreePolygonBody):
@@ -128,7 +128,7 @@ class Team:
 class Football:
 
     TEAM_SIZE = 1  # in one team
-    BALL_SIZE = 3
+    BALL_SIZE = 10
 
     def __init__(self, window, size, fps) -> None:
         self.window = window
@@ -181,9 +181,11 @@ class Football:
         if self.teams[TEAM_RIGHT].score:
             self.done = True
         ball_pos = self.ball.position()
+        ball_dir = self.ball.direction()
+        ball_vel = self.ball.speed()
         player_pos = self.plane.to_xy(self.players[0].shape.plane.CENTER)
         speed = self.players[0].speed()
-        state = [ball_pos[0], ball_pos[1], player_pos[0], player_pos[1], dir_now, speed, omega]
+        state = [ball_pos[0], ball_pos[1], ball_dir, ball_vel, player_pos[0], player_pos[1], dir_now, speed]
         if self.done and self.teams[TEAM_RIGHT].score == 0:
             reward = -1
         else:
@@ -202,9 +204,11 @@ class Football:
         dr = np.random.random() * np.pi * 2
         self.teams[TEAM_RIGHT].players[0].reset((x, y), dr)
         ball_pos = self.ball.position()
+        ball_dir = self.ball.direction()
+        ball_vel = self.ball.speed()
         dir_now = self.teams[TEAM_RIGHT].players[0].direction()
         player_pos = self.plane.to_xy(self.players[0].shape.plane.CENTER)
-        state = [ball_pos[0], ball_pos[1], player_pos[0], player_pos[1], dir_now, 0, 0]
+        state = [ball_pos[0], ball_pos[1], ball_dir, ball_vel, player_pos[0], player_pos[1], dir_now, 0]
         return state
 
     def check_ball(self):

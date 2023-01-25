@@ -6,10 +6,14 @@ MAX_REPLAY_BUFFER = 24000
 TARGET_NET_UPDATE_FREQ = 300
 MAIN_NET_TRAIN_FREQ = 30
 CURRENT_TRAIN_ID = '2023-01-09'
-ENV_COUNT = 5
+ENV_COUNT = 20
 
 model = DQN(ACTIONS, 0.001, 0.99)
-model.create_model([STATE_SPACE_SIZE, 20, 20, ACTIONS.__len__()], epochs=3, gpu=True)
+model.create_model([STATE_SPACE_SIZE, 20, 20, ACTIONS.__len__()],
+                   epochs=1,
+                   batchs=512,
+                   train_freq=20,
+                   gpu=True)
 model.create_buffer(MAX_REPLAY_BUFFER, model.batchs)
 
 sim = SinglePlayer(ENV_COUNT)
@@ -24,9 +28,7 @@ while sim.running:
     for i in range(ENV_COUNT):
         if sim.envs[i].done:
             states[i] = sim.envs[i].reset()
-
-    for state in states:
-        actions.append(model.policy(state))
+    actions = model.policy(states)
 
     infos = sim.step(actions)
 
