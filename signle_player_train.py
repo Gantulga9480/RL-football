@@ -1,14 +1,13 @@
 from single_player_env import SinglePlayer, ACTIONS, STATE_SPACE_SIZE
 from RL.dqn import DQN
 
-
 MAX_REPLAY_BUFFER = 240000
-BATCH_SIZE = 128
-EPOCHS = 2
-TARGET_NET_UPDATE_FREQ = 300
-MAIN_NET_TRAIN_FREQ = 30
+BATCH_SIZE = 2048
+EPOCHS = 1
+TARGET_NET_UPDATE_FREQ = 10
+MAIN_NET_TRAIN_FREQ = 60
 CURRENT_TRAIN_ID = '2023-01-26'
-ENV_COUNT = 10
+ENV_COUNT = 50
 
 model = DQN(ACTIONS, 0.001, 0.99, gpu=True)
 model.create_model([STATE_SPACE_SIZE, 20, 20, ACTIONS.__len__()],
@@ -48,8 +47,9 @@ while sim.running:
     model.learn(current_states, actions, new_states, rewards, dones)
 
     info = ' '.join([
-        f'e: {model.e}',
-        f'r: {round(sum(rewards) / ENV_COUNT, 2)}'
+        f'e: {round(model.e, 4)}',
+        f'r: {round(sum(rewards) / ENV_COUNT, 2)}',
+        f'fps: {round(sim.clock.get_fps(), 2)}'
     ])
     print(info)
 
