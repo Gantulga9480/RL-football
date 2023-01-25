@@ -5,8 +5,8 @@ from .agent import Agent
 
 class QLAgent(Agent):
 
-    def __init__(self, action_space: list, lr: float = 0.01, y: float = 0.99) -> None:
-        super().__init__(action_space, lr, y)
+    def __init__(self, action_space: list, lr: float, y: float, e_decay: float = 0.99999) -> None:
+        super().__init__(action_space, lr, y, e_decay)
 
     def create_model(self, dim: tuple) -> None:
         self.model = np.zeros(dim)
@@ -18,7 +18,6 @@ class QLAgent(Agent):
         self.model = np.load(path)
 
     def learn(self, s: tuple, a: int, r: float, ns: tuple, d: bool) -> None:
-        self.reward_history['step'].append(r)
         if not d:
             max_future_q_value = np.max(self.model[ns])
             current_q_value = self.model[s][a]
@@ -27,9 +26,6 @@ class QLAgent(Agent):
             self.model[s][a] = new_q_value
         else:
             self.model[s][a] = r
-            avg = sum(self.reward_history['step'][-self.step_count:]) / self.step_count
-            self.reward_history['epis'].append(avg)
-            self.reward_history['step'].clear()
             self.episode_count += 1
 
     def policy(self, state, greedy=False):
@@ -37,7 +33,3 @@ class QLAgent(Agent):
         if not greedy and np.random.random() < self.e:
             return np.random.choice(self.action_space)
         return np.argmax(self.model[state])
-
-    def plot(self):
-        plt.plot(self.reward_history['epis'])
-        plt.show()

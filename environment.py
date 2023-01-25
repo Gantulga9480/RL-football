@@ -34,7 +34,7 @@ class Ball(FreePolygonBody):
 class Player(DynamicPolygonBody):
 
     PLAYER_SIZE = 10
-    PLAYER_MAX_SPEED = 2.5
+    PLAYER_MAX_SPEED = 4
     PLAYER_SPEED_BALL = 2
     PLAYER_MAX_TURN_RATE = 3
     PLAYER_MAX_FOV = 120
@@ -57,9 +57,9 @@ class Player(DynamicPolygonBody):
             power += 1
             d = self.velocity.dir()
             ball.velocity.head = (power * np.cos(d), power * np.sin(d))
-            pos = ball.shape.plane.get_parent_vector().plane.to_xy(self.shape.plane.CENTER)
-            ball.shape.plane.get_parent_vector().head = pos
+            ball.shape.plane.get_parent_vector().head = ball.shape.plane.get_parent_vector().plane.to_xy(self.shape.plane.CENTER)
             ball.is_free = True
+            self.velocity.max = Player.PLAYER_MAX_SPEED
             self.kicked = True
             self.has_ball = False
 
@@ -224,18 +224,21 @@ class Playground(Game):
                     player.has_ball = True
                     player.velocity.max = Player.PLAYER_SPEED_BALL
                     self.current_player = p_idx
-            if self.ball.is_free:
-                pos = self.ball.position()
-                # Left team scored a goal
-                if (pos[0] < self.plane.x_min + 60 and -70 < pos[1] < 70):
-                    self.ball.velocity.head = (1, 0)
-                    self.ball.shape.plane.get_parent_vector().head = (0, 0)
-                    self.teams[TEAM_LEFT].score += 1
-                # Right team scored a goal
-                elif (pos[0] > self.plane.x_max - 60 and -70 < pos[1] < 70):
-                    self.ball.velocity.head = (1, 0)
-                    self.ball.shape.plane.get_parent_vector().head = (0, 0)
-                    self.teams[TEAM_RIGHT].score += 1
+        pos = None
+        if self.ball.is_free:
+            pos = self.ball.position()
+        else:
+            pos = self.plane.to_xy(self.players[self.current_player].shape.plane.CENTER)
+        if (pos[0] < self.plane.x_min + 60 and -70 < pos[1] < 70):
+            self.players[self.current_player].kick(self.ball, 0)
+            self.ball.velocity.head = (1, 0)
+            self.ball.shape.plane.get_parent_vector().head = (0, 0)
+            self.teams[TEAM_LEFT].score += 1
+        elif (pos[0] > self.plane.x_max - 60 and -70 < pos[1] < 70):
+            self.players[self.current_player].kick(self.ball, 0)
+            self.ball.velocity.head = (1, 0)
+            self.ball.shape.plane.get_parent_vector().head = (0, 0)
+            self.teams[TEAM_RIGHT].score += 1
 
     def create_wall(self, wall_width=120, wall_height=5):
         y = self.size[1] // 2 - wall_width // 2 - wall_height // 2
