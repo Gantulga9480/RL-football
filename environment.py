@@ -192,7 +192,7 @@ class Playground(Game):
         vv2.rotate(-Player.PLAYER_MAX_FOV / 360 * np.pi)
         vv1.show()
         vv2.show()
-        for player in self.players[1:]:
+        for player in self.players:
             if player != p1:
                 pos = player.shape.plane.CENTER
                 pos = p1_plane.to_xy(pos)
