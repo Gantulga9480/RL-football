@@ -6,6 +6,7 @@ from Game.physics import (DynamicPolygonBody,
                           StaticRectangleBody)
 from Game.physics import EnginePolygon
 import numpy as np
+from player import Player
 
 
 TEAM_COLOR = [(0, 162, 232), (34, 177, 76)]
@@ -39,58 +40,8 @@ class Ball(FreePolygonBody):
         self.shape.plane.get_parent_vector().head = pos
 
     def show(self, vertex: bool = False, velocity: bool = False) -> None:
-        self.step()
         core.draw.circle(self.shape.plane.window, (255, 0, 0), self.velocity.TAIL, self.radius)
         super().show(vertex, velocity)
-
-
-class Player(DynamicPolygonBody):
-
-    PLAYER_SIZE = 10
-    PLAYER_MAX_SPEED = 3
-    PLAYER_SPEED_BALL = 2
-    PLAYER_MAX_TURN_RATE = 6
-    PLAYER_MAX_FOV = 120
-
-    def __init__(self,
-                 id: int,
-                 team_id: int,
-                 plane: CartesianPlane,
-                 size: tuple,
-                 max_speed: float = 1,
-                 drag_coef: float = 0.01,
-                 friction_coef: float = 0.3) -> None:
-        super().__init__(id, plane, size, max_speed, drag_coef, friction_coef)
-        self.team_id = team_id
-        self.kicked = False
-        self.has_ball = False
-
-    def kick(self, ball: Ball, power: float):
-        if self.has_ball:
-            power += 1
-            d = self.velocity.dir()
-            ball.velocity.head = (power * np.cos(d), power * np.sin(d))
-            ball.shape.plane.get_parent_vector().head = ball.shape.plane.get_parent_vector().plane.to_xy(self.shape.plane.CENTER)
-            ball.is_free = True
-            self.velocity.max = Player.PLAYER_MAX_SPEED
-            self.kicked = True
-            self.has_ball = False
-
-    def reset(self, position, diraction):
-        self.shape.plane.get_parent_vector().head = position
-        tmp = diraction - self.velocity.dir()
-        self.velocity.max = Player.PLAYER_MAX_SPEED
-        self.velocity.rotate(tmp)
-        self.shape.rotate(tmp)
-        self.kicked = False
-        self.has_ball = False
-
-    def show(self, vertex: bool = False, velocity: bool = False) -> None:
-        core.draw.circle(self.shape.plane.window, TEAM_COLOR[self.team_id], self.velocity.TAIL, self.radius)
-        super().show(vertex, velocity)
-        if self.has_ball:
-            core.draw.circle(self.shape.plane.window, (255, 0, 0), self.velocity.TAIL, 3)
-            core.draw.circle(self.shape.plane.window, (0, 0, 0), self.velocity.TAIL, 3, 1)
 
 
 class Team:
@@ -170,6 +121,8 @@ class Football:
         elif action == TURN_RIGHT:
             speed = self.players[0].speed()
             self.players[0].rotate(-Player.PLAYER_MAX_TURN_RATE / (speed + 1))
+        self.engine.step()
+        self.ball.step()
         self.check_ball()
         self.show()
         dir_now = self.players[0].direction()
@@ -278,7 +231,6 @@ class Football:
         self.teams[TEAM_RIGHT].show()
         if self.ball.is_free:
             self.ball.show()
-        self.engine.step()
 
 
 class SinglePlayer(Game):
