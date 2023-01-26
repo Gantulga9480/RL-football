@@ -305,3 +305,101 @@ cdef class FreePolygonBody(FreeBody):
         super().__init__(id, plane, max_speed, drag_coef)
         self.radius = max(size)
         self.shape = Polygon(plane, size)
+
+@cython.optimize.unpack_method_calls(False)
+cdef class Ball(FreePolygonBody):
+
+    def __cinit__(self, *args, **kwargs):
+        pass
+
+    def __init__(self,
+                 int id,
+                 CartesianPlane plane,
+                 tuple size,
+                 double max_speed=0,
+                 double drag_coef=0):
+        super().__init__(id, plane, size, max_speed, drag_coef)
+        self.is_free = True
+
+    def reset(self, (double, double) pos):
+        self.is_free = True
+        self.velocity.set_head((1, 0))
+        self.shape.plane.parent_vector.set_head(pos)
+
+    def show(self, vertex=False, velocity=False) -> None:
+        circle(self.shape.plane.window, (255, 0, 0), self.velocity.get_TAIL(), self.radius)
+        super().show(vertex, velocity)
+
+@cython.optimize.unpack_method_calls(False)
+cdef class Player(DynamicPolygonBody):
+
+    PLAYER_SIZE = 10
+    PLAYER_MAX_SPEED = 3
+    PLAYER_SPEED_BALL = 2
+    PLAYER_MAX_TURN_RATE = 6
+    PLAYER_MAX_FOV = 120
+    TEAM_COLOR = ((0, 162, 232), (34, 177, 76))
+
+    def __cinit__(self, *args, **kwargs):
+        pass
+
+    def __init__(self,
+                 int id,
+                 int team_id,
+                 CartesianPlane plane,
+                 tuple size,
+                 double max_speed=1,
+                 double drag_coef=0.01,
+                 double friction_coef=0.3):
+        super().__init__(id, plane, size, max_speed, drag_coef, friction_coef)
+        self.team_id = team_id
+        self.kicked = False
+        self.has_ball = False
+
+    def kick(self, FreePolygonBody ball, double power):
+        cdef double d
+        if self.has_ball:
+            power += 1
+            ball.velocity.set_head(self.velocity.unit_vector(power))
+            ball.shape.plane.parent_vector.set_head(ball.shape.plane.parent_vector.plane.to_xy(self.shape.plane.get_CENTER()))
+            ball.is_free = True
+            self.velocity.max = self.PLAYER_MAX_SPEED
+            self.kicked = True
+            self.has_ball = False
+
+    def reset(self, (double, double) position, double diraction):
+        cdef double tmp = diraction - self.velocity.dir()
+        self.shape.plane.parent_vector.set_head(position)
+        self.velocity.max = self.PLAYER_MAX_SPEED
+        self.velocity.rotate(tmp)
+        self.shape.rotate(tmp)
+        self.kicked = False
+        self.has_ball = False
+
+    def show(self, vertex=False, velocity=False):
+        circle(self.shape.plane.window, self.TEAM_COLOR[self.team_id], self.velocity.get_TAIL(), self.radius)
+        super().show(vertex, velocity)
+        if self.has_ball:
+            circle(self.shape.plane.window, (255, 0, 0), self.velocity.get_TAIL(), 3)
+            circle(self.shape.plane.window, (0, 0, 0), self.velocity.get_TAIL(), 3, 1)
+
+    cdef void USR_resolve_collision(self, Body o, (double, double) dxy):
+        if o.type == DYNAMIC:
+            self.velocity.scale(self.friction_coef)
+            o.velocity.scale(self.friction_coef)
+            self.shape.plane.parent_vector.set_head((self.shape.plane.parent_vector.head.x.num + -dxy[0]/2, self.shape.plane.parent_vector.head.y.num + -dxy[1]/2))
+            o.shape.plane.parent_vector.set_head((o.shape.plane.parent_vector.head.x.num + dxy[0]/2, o.shape.plane.parent_vector.head.y.num + dxy[1]/2))
+            if self.team_id != o.team_id:
+                if self.has_ball:
+                    self.has_ball = False
+                    self.velocity.max = self.PLAYER_MAX_SPEED
+                    o.has_ball = True
+                    o.velocity.max = self.PLAYER_SPEED_BALL
+                elif o.has_ball:
+                    self.has_ball = True
+                    self.velocity.max = self.PLAYER_SPEED_BALL
+                    o.has_ball = False
+                    o.velocity.max = self.PLAYER_MAX_SPEED
+        elif o.type == STATIC:
+            self.velocity.scale(self.friction_coef)
+            self.shape.plane.parent_vector.set_head((self.shape.plane.parent_vector.head.x.num + -dxy[0], self.shape.plane.parent_vector.head.y.num + -dxy[1]))

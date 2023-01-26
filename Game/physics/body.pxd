@@ -64,3 +64,11 @@ cdef class Ray(FreeBody):
     cdef readonly double x
     cdef readonly double y
     cpdef void reset(self)
+
+cdef class Ball(FreePolygonBody):
+    cdef public bint is_free
+
+cdef class Player(DynamicPolygonBody):
+    cdef public int team_id
+    cdef public bint kicked
+    cdef public bint has_ball

@@ -1,15 +1,12 @@
 from Game import Game
 from Game import core
 from Game.graphic import CartesianPlane
-from Game.physics import (DynamicPolygonBody,
-                          FreePolygonBody, Body,
+from Game.physics import (Player, Ball, Body,
                           StaticRectangleBody)
 from Game.physics import EnginePolygon
 import numpy as np
-from player import Player
 
 
-TEAM_COLOR = [(0, 162, 232), (34, 177, 76)]
 TEAM_LEFT = 0
 TEAM_RIGHT = 1
 
@@ -21,27 +18,6 @@ TURN_LEFT = 3
 TURN_RIGHT = 4
 ACTIONS = [KICK, GO_FORWARD, STOP, TURN_LEFT, TURN_RIGHT]
 STATE_SPACE_SIZE = 8
-
-
-class Ball(FreePolygonBody):
-
-    def __init__(self,
-                 id: int,
-                 plane: CartesianPlane,
-                 size: tuple,
-                 max_speed: float = 0,
-                 drag_coef: float = 0) -> None:
-        super().__init__(id, plane, size, max_speed, drag_coef)
-        self.is_free = True
-
-    def reset(self, pos: tuple):
-        self.is_free = True
-        self.velocity.head = (1, 0)
-        self.shape.plane.get_parent_vector().head = pos
-
-    def show(self, vertex: bool = False, velocity: bool = False) -> None:
-        core.draw.circle(self.shape.plane.window, (255, 0, 0), self.velocity.TAIL, self.radius)
-        super().show(vertex, velocity)
 
 
 class Team:
@@ -71,9 +47,9 @@ class Team:
 
     def show(self):
         if self.team_id == TEAM_LEFT:
-            core.draw.rect(self.plane.window, TEAM_COLOR[TEAM_LEFT], (11 + 1, 470 + 1, 50 - 2, 140 - 2))
+            core.draw.rect(self.plane.window, Player.TEAM_COLOR[TEAM_LEFT], (11 + 1, 470 + 1, 50 - 2, 140 - 2))
         elif self.team_id == TEAM_RIGHT:
-            core.draw.rect(self.plane.window, TEAM_COLOR[TEAM_RIGHT], (1860, 470 + 1, 50 - 2, 140 - 2))
+            core.draw.rect(self.plane.window, Player.TEAM_COLOR[TEAM_RIGHT], (1860, 470 + 1, 50 - 2, 140 - 2))
 
 
 class Football:
@@ -166,6 +142,7 @@ class Football:
         return state
 
     def check_ball(self):
+        tmp = self.ball.is_free
         if self.ball.is_free:
             dists = []
             idx = []
@@ -187,10 +164,14 @@ class Football:
                     player.has_ball = True
                     player.velocity.max = Player.PLAYER_SPEED_BALL
                     self.current_player = p_idx
-        pos = None
         if self.ball.is_free:
             pos = self.ball.position()
         else:
+            if not tmp:
+                for i, p in enumerate(self.players):
+                    if p.has_ball:
+                        self.current_player = i
+                        break
             pos = self.plane.to_xy(self.players[self.current_player].shape.plane.CENTER)
         if (pos[0] < self.plane.x_min + 60 and -70 < pos[1] < 70):
             self.teams[TEAM_LEFT].score += 1

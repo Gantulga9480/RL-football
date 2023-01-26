@@ -7,6 +7,6 @@ from Game.physics.body import (Body,
                                StaticRectangleBody,
                                StaticTriangleBody,
                                FreePolygonBody,
-                               Ray)
+                               Ray, Player, Ball)
 from Game.physics.collision import collision
 from Game.physics.engine import EnginePolygon

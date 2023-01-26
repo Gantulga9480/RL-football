@@ -78,3 +78,24 @@ class Ray(FreeBody):
     y: float
     def __init__(self, id: int, plane: CartesianPlane, length: float, max_speed: float = 0, drag_coef: float = 0) -> None: ...
     def reset(self) -> None: ...
+
+
+class Ball(FreePolygonBody):
+    is_free: bool
+    def __init__(self, id: int, plane: CartesianPlane, size: tuple, max_speed: float = 0, drag_coef: float = 0) -> None: ...
+    def reset(self, pos: tuple) -> None: ...
+
+
+class Player(DynamicPolygonBody):
+    PLAYER_SIZE: int
+    PLAYER_MAX_SPEED: int
+    PLAYER_SPEED_BALL: int
+    PLAYER_MAX_TURN_RATE: int
+    PLAYER_MAX_FOV: int
+    TEAM_COLOR: tuple
+    team_id: int
+    kicked: bool
+    has_ball: bool
+    def __init__(self, id: int, team_id: int, plane: CartesianPlane, size: tuple, max_speed: float = 0, drag_coef: float = 0, friction_coef: float = 0.3) -> None: ...
+    def reset(self, position: tuple, diraction: float) -> None: ...
+    def kick(self, ball: FreePolygonBody, power: float) -> None: ...
