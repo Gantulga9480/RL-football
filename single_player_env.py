@@ -45,17 +45,14 @@ class Team:
     def reset(self):
         pass
 
-    def show(self):
-        if self.team_id == TEAM_LEFT:
-            core.draw.rect(self.plane.window, Player.TEAM_COLOR[TEAM_LEFT], (11 + 1, 470 + 1, 50 - 2, 140 - 2))
-        elif self.team_id == TEAM_RIGHT:
-            core.draw.rect(self.plane.window, Player.TEAM_COLOR[TEAM_RIGHT], (1860, 470 + 1, 50 - 2, 140 - 2))
-
 
 class Football:
 
     TEAM_SIZE = 1  # in one team
-    BALL_SIZE = 10
+    BALL_SIZE = 20
+
+    GOAL_AREA_WIDTH = 120
+    GOAL_AREA_HEIGHT = 400
 
     def __init__(self, window, size, fps) -> None:
         self.window = window
@@ -86,9 +83,9 @@ class Football:
 
     def step(self, action):
         if action == KICK:
-            self.players[0].kick(self.ball, 5)
+            self.players[0].kick(self.ball, 10)
         elif action == GO_FORWARD:
-            self.players[0].accelerate(5)
+            self.players[0].accelerate(10)
         elif action == STOP:
             self.players[0].accelerate(-1)
         elif action == TURN_LEFT:
@@ -111,6 +108,8 @@ class Football:
         if ball_pos[0] > self.plane.x_max or ball_pos[0] < self.plane.x_min or \
                 ball_pos[1] > self.plane.y_max or ball_pos[1] < self.plane.y_min:
             self.done = True
+        if ball_pos[0] < -60:
+            self.done = True
         ball_dir = self.ball.direction()
         ball_vel = self.ball.speed()
         player_pos = self.plane.to_xy(self.players[0].shape.plane.CENTER)
@@ -126,9 +125,9 @@ class Football:
         self.counter = 0
         self.done = False
         self.teams[TEAM_RIGHT].score = 0
-        self.ball.reset((650, 0))
+        self.ball.reset((300, 0))
         x_lim = self.teams[TEAM_RIGHT].plane.to_xy(self.plane.CENTER)[0]
-        y_lim = 450
+        y_lim = (self.size[1] - 60 * 2) / 2
         x = np.random.randint(x_lim, 1)
         y = np.random.randint(-y_lim, y_lim + 1)
         dr = np.random.random() * np.pi * 2
@@ -173,9 +172,9 @@ class Football:
                         self.current_player = i
                         break
             pos = self.plane.to_xy(self.players[self.current_player].shape.plane.CENTER)
-        if (pos[0] < self.plane.x_min + 60 and -70 < pos[1] < 70):
+        if (pos[0] < self.plane.x_min + self.GOAL_AREA_WIDTH) and (-self.GOAL_AREA_HEIGHT/2 < pos[1] < self.GOAL_AREA_HEIGHT/2):
             self.teams[TEAM_LEFT].score += 1
-        elif (pos[0] > self.plane.x_max - 60 and -70 < pos[1] < 70):
+        elif (pos[0] > self.plane.x_max - self.GOAL_AREA_WIDTH) and (-self.GOAL_AREA_HEIGHT/2 < pos[1] < self.GOAL_AREA_HEIGHT/2):
             self.teams[TEAM_RIGHT].score += 1
 
     def create_wall(self, wall_width=120, wall_height=5):
@@ -184,7 +183,7 @@ class Football:
             self.bodies.append(
                 StaticRectangleBody(-1,
                                     CartesianPlane(self.window, (wall_width, wall_width),
-                                                   self.plane.createVector(-55, y)),
+                                                   self.plane.createVector(-60, y)),
                                     (wall_height, wall_width)))
             self.bodies.append(
                 StaticRectangleBody(-1,
@@ -209,7 +208,21 @@ class Football:
             x += wall_width
 
     def show(self):
-        self.teams[TEAM_RIGHT].show()
+        width = self.size[0] - self.GOAL_AREA_WIDTH * 2
+        height = self.size[1] - 60 * 2
+        core.draw.rect(self.window, (0, 0, 0), (Football.GOAL_AREA_WIDTH, 60, width, height), 1)  # Touch line
+        core.draw.rect(self.plane.window,
+                       Player.TEAM_COLOR[TEAM_LEFT],
+                       (0, self.size[1] / 2 - self.GOAL_AREA_HEIGHT / 2, self.GOAL_AREA_WIDTH, self.GOAL_AREA_HEIGHT))
+        core.draw.rect(self.plane.window,
+                       (0, 0, 0),
+                       (0, self.size[1] / 2 - self.GOAL_AREA_HEIGHT / 2, self.GOAL_AREA_WIDTH, self.GOAL_AREA_HEIGHT), 1)
+        core.draw.rect(self.plane.window,
+                       Player.TEAM_COLOR[TEAM_RIGHT],
+                       (self.size[0] - self.GOAL_AREA_WIDTH, self.size[1] / 2 - self.GOAL_AREA_HEIGHT / 2, self.GOAL_AREA_WIDTH, self.GOAL_AREA_HEIGHT))
+        core.draw.rect(self.plane.window,
+                       (0, 0, 0),
+                       (self.size[0] - self.GOAL_AREA_WIDTH, self.size[1] / 2 - self.GOAL_AREA_HEIGHT / 2, self.GOAL_AREA_WIDTH, self.GOAL_AREA_HEIGHT), 1)
         if self.ball.is_free:
             self.ball.show()
 
@@ -219,7 +232,7 @@ class SinglePlayer(Game):
     def __init__(self, env_count: int = 1) -> None:
         super().__init__()
         self.size = (1920, 1080)
-        self.fps = 60
+        self.fps = 30
         self.set_window()
         self.set_title(self.title)
         self.envs: list[Football] = []
@@ -246,18 +259,6 @@ class SinglePlayer(Game):
 
     def onRender(self):
         self.window.fill((255, 255, 255))
-        self.draw_field()
         self.infos = []
         for i in range(self.env_count):
             self.infos.append(self.envs[i].step(self.actions[i]))
-
-    def draw_field(self, width=1):
-        core.draw.rect(self.window, (0,) * 3, (60, 90, 1800, 900), width)  # Touch line
-        core.draw.rect(self.window, (0,) * 3, (60, 367, 100, 346), width)  # Left goal area
-        core.draw.rect(self.window, (0,) * 3, (1760, 367, 100, 346), width)  # Right goal area
-        core.draw.rect(self.window, (0,) * 3, (60, 149, 321, 783), width)  # Left penalty area
-        core.draw.rect(self.window, (0,) * 3, (1539, 149, 321, 783), width)  # Right penalty area
-        core.draw.circle(self.window, (0, 0, 0), (960, 540), 180, width)
-        core.draw.line(self.window, (0,) * 3, (960, 90), (960, 989))
-        core.draw.rect(self.window, (0, 0, 0), (11, 470, 50, 140), width)
-        core.draw.rect(self.window, (0, 0, 0), (1859, 470, 50, 140), width)

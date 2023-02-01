@@ -333,9 +333,9 @@ cdef class Ball(FreePolygonBody):
 @cython.optimize.unpack_method_calls(False)
 cdef class Player(DynamicPolygonBody):
 
-    PLAYER_SIZE = 10
-    PLAYER_MAX_SPEED = 3
-    PLAYER_SPEED_BALL = 2
+    PLAYER_SIZE = 30
+    PLAYER_MAX_SPEED = 10
+    PLAYER_SPEED_BALL = 7
     PLAYER_MAX_TURN_RATE = 6
     PLAYER_MAX_FOV = 120
     TEAM_COLOR = ((0, 162, 232), (34, 177, 76))
