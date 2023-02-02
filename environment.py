@@ -48,6 +48,9 @@ class Playground(Game):
     TEAM_SIZE = 5  # in one team
     BALL_SIZE = 10
 
+    GOAL_AREA_WIDTH = 120
+    GOAL_AREA_HEIGHT = 400
+
     def __init__(self) -> None:
         super().__init__()
         self.size = (1920, 1080)
