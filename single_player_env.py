@@ -116,9 +116,9 @@ class Football:
         speed = self.players[0].speed()
         state = [ball_pos[0], ball_pos[1], ball_dir, ball_vel, player_pos[0], player_pos[1], dir_now, speed]
         if self.done and self.teams[TEAM_RIGHT].score == 0:
-            reward = -1
+            reward = -10
         else:
-            reward = self.teams[TEAM_RIGHT].score
+            reward = self.teams[TEAM_RIGHT].score * 10
         return state, reward, self.done
 
     def reset(self):

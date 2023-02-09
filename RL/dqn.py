@@ -23,15 +23,16 @@ class DQN(Agent):
         self.train_count = 0
         if self.gpu:
             gpus = tf.config.list_physical_devices('GPU')
-            if gpus:
-                try:
-                    # Currently, memory growth needs to be the same across GPUs
-                    for gpu in gpus:
-                        tf.config.experimental.set_memory_growth(gpu, True)
-                        tf.config.list_logical_devices('GPU')
-                except RuntimeError as e:
-                    # Memory growth must be set before GPUs have been initialized
-                    print(e)
+            print(gpus)
+            # if gpus:
+            #     try:
+            #         # Currently, memory growth needs to be the same across GPUs
+            #         for gpu in gpus[:1]:
+            #             tf.config.experimental.set_memory_growth(gpu, True)
+            #             tf.config.list_logical_devices('GPU')
+            #     except RuntimeError as e:
+            #         # Memory growth must be set before GPUs have been initialized
+            #         print(e)
         else:
             os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
