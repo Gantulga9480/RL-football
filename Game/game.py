@@ -35,26 +35,15 @@ class Game:
         self.sprites: list[pg.Rect] = []
         self.window = None
 
-    # def __del__(self):
-    #     pg.quit()
-
-    @staticmethod
-    def quit():
-        print('before pg.quit')
-        # pg.quit()
-        print('after pg.quit')
+    def __del__(self):
+        pg.quit()
 
     def loop_forever(self):
         self.__setup()
         while self.running:
-            print('loop start')
             self.__eventHandler()
             self.loop()
             self.__render()
-            print('loop end')
-        print('exit')
-        self.quit()
-        print('after quit')
 
     def loop_once(self):
         self.__eventHandler()
@@ -80,6 +69,7 @@ class Game:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 self.running = False
+                break
             else:
                 self.onEvent(event)
 
