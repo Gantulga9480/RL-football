@@ -16,7 +16,7 @@ GO_FORWARD = 1
 STOP = 2
 TURN_LEFT = 3
 TURN_RIGHT = 4
-ACTIONS = [KICK, GO_FORWARD, STOP, TURN_LEFT, TURN_RIGHT]
+ACTION_SPACE_SIZE = 5
 STATE_SPACE_SIZE = 8
 
 
@@ -172,9 +172,9 @@ class Football:
                         self.current_player = i
                         break
             pos = self.plane.to_xy(self.players[self.current_player].shape.plane.CENTER)
-        if (pos[0] < self.plane.x_min + self.GOAL_AREA_WIDTH) and (-self.GOAL_AREA_HEIGHT/2 < pos[1] < self.GOAL_AREA_HEIGHT/2):
+        if (pos[0] < self.plane.x_min + self.GOAL_AREA_WIDTH) and (-self.GOAL_AREA_HEIGHT / 2 < pos[1] < self.GOAL_AREA_HEIGHT / 2):
             self.teams[TEAM_LEFT].score += 1
-        elif (pos[0] > self.plane.x_max - self.GOAL_AREA_WIDTH) and (-self.GOAL_AREA_HEIGHT/2 < pos[1] < self.GOAL_AREA_HEIGHT/2):
+        elif (pos[0] > self.plane.x_max - self.GOAL_AREA_WIDTH) and (-self.GOAL_AREA_HEIGHT / 2 < pos[1] < self.GOAL_AREA_HEIGHT / 2):
             self.teams[TEAM_RIGHT].score += 1
 
     def create_wall(self, wall_width=120, wall_height=5):

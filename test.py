@@ -9,7 +9,6 @@ class Test(Game):
         super().__init__()
         self.size = (1920, 1080)
         self.fps = 30
-        self.window_flags = core.FULLSCREEN | core.HWSURFACE
         self.team_size = 3
         self.set_window()
         self.set_title(self.title)
