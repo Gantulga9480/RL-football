@@ -1,24 +1,45 @@
-from single_player_env import SinglePlayer, ACTIONS, STATE_SPACE_SIZE
-from RL.dqn import DQN
+from single_player_env import SinglePlayer, ACTION_SPACE_SIZE, STATE_SPACE_SIZE
+from RL.dqn import DQNAgent
+from RL.utils import ReplayBuffer
 import numpy as np
+from torch import nn
 
-MAX_REPLAY_BUFFER = 50000
-BATCH_SIZE = 256
+
+class DQN(nn.Module):
+
+    def __init__(self, input_shape, output_shape) -> None:
+        super().__init__()
+        self.model = nn.Sequential(
+            nn.Linear(input_shape, 10),
+            nn.ReLU(),
+            nn.Linear(10, 20),
+            nn.ReLU(),
+            nn.Linear(20, 10),
+            nn.ReLU(),
+            nn.Linear(10, output_shape)
+        )
+
+    def forward(self, x):
+        return self.model(x)
+
+
+MAX_REPLAY_BUFFER = 5000
+BATCH_SIZE = 64
 EPOCHS = 1
-TARGET_NET_UPDATE_FREQ = 50
-MAIN_NET_TRAIN_FREQ = 10
-CURRENT_TRAIN_ID = '2023-02-09'
-ENV_COUNT = 50
-SAVE_INTERVAL = 30000
+TARGET_NET_UPDATE_FREQ = 10
+MAIN_NET_TRAIN_FREQ = 1
+CURRENT_TRAIN_ID = '2023-02-10-single'
+ENV_COUNT = 1
+SAVE_INTERVAL = 10000
 
-model = DQN(ACTIONS, 0.001, 0.99, gpu=True)
-model.create_model([STATE_SPACE_SIZE, 8, 16, 8, ACTIONS.__len__()],
+model = DQNAgent(STATE_SPACE_SIZE, ACTION_SPACE_SIZE, 0.003, 0.99, device="cuda:1")
+model.create_model(DQN(STATE_SPACE_SIZE, ACTION_SPACE_SIZE),
+                   DQN(STATE_SPACE_SIZE, ACTION_SPACE_SIZE),
                    epochs=EPOCHS,
                    batchs=BATCH_SIZE,
                    train_freq=MAIN_NET_TRAIN_FREQ,
                    update_freq=TARGET_NET_UPDATE_FREQ)
-model.create_buffer(MAX_REPLAY_BUFFER, model.batchs * 10)
-model.e_min = 0.1
+model.create_buffer(ReplayBuffer(MAX_REPLAY_BUFFER, BATCH_SIZE * 10))
 
 sim = SinglePlayer(ENV_COUNT)
 
@@ -53,21 +74,23 @@ while sim.running:
 
     last_rewards.append(np.sum(rewards) / ENV_COUNT)
 
-    info = ' '.join([
-        f'e: {round(model.e, 4)}',
-        f'r: {round(sum(rewards) / ENV_COUNT, 2)}',
-        f'fps: {round(sim.clock.get_fps(), 2)}'
-    ])
-    print(info)
+    if sim.step_count % 100:
+        info = ' '.join([
+            f'e: {round(model.e, 4)}',
+            f'r: {round(last_rewards[-1], 2)}',
+            f'fps: {round(sim.clock.get_fps(), 2)}'
+        ])
+        print(info)
 
     if sim.step_count % SAVE_INTERVAL == 0:
         avg_rewards.append(np.sum(last_rewards) / SAVE_INTERVAL)
-        path = '/'.join(['model', CURRENT_TRAIN_ID, f'model-{sim.step_count}'])
+        path = '/'.join(['model', CURRENT_TRAIN_ID, f'model-{sim.step_count}.pt'])
         model.save_model(path)
 
 print(sim.step_count)
+
 # save trained model
-path = '/'.join(['model', CURRENT_TRAIN_ID, 'model'])
+path = '/'.join(['model', CURRENT_TRAIN_ID, 'model.pt'])
 model.save_model(path)
 
 # save training reward history
