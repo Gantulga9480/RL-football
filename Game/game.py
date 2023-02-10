@@ -1,11 +1,21 @@
 import pygame as pg    # noqa
+import platform
 
 
 class Game:
 
     def __init__(self) -> None:
         if not pg.get_init():
-            pg.init()
+            os = platform.system()
+            if os == "Linux":
+                # On linux pg.quit hangs. Some pygame modules don't work properly on linux
+                # Since we're using only display module for this package, initializing only display will do the trick
+                pg.display.init()
+            elif os == "Windows":
+                # Windows not affected by this issue. So it's good to init all modules
+                pg.init()
+            else:
+                print("[Warning] - Unknown platform, pygame not initialized")
 
         # Main window
         self.title: str = 'PyGameDemo'
@@ -25,15 +35,26 @@ class Game:
         self.sprites: list[pg.Rect] = []
         self.window = None
 
-    def __del__(self):
-        pg.quit()
+    # def __del__(self):
+    #     pg.quit()
+
+    @staticmethod
+    def quit():
+        print('before pg.quit')
+        # pg.quit()
+        print('after pg.quit')
 
     def loop_forever(self):
         self.__setup()
         while self.running:
+            print('loop start')
             self.__eventHandler()
             self.loop()
             self.__render()
+            print('loop end')
+        print('exit')
+        self.quit()
+        print('after quit')
 
     def loop_once(self):
         self.__eventHandler()
@@ -59,7 +80,6 @@ class Game:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 self.running = False
-                break
             else:
                 self.onEvent(event)
 
@@ -73,7 +93,7 @@ class Game:
             if self.sprites.__len__() > 0:
                 pg.display.update(self.sprites)
             pg.display.flip()
-            # self.clock.tick(self.fps)
+            self.clock.tick(self.fps)
 
     def onRender(self):
         """ User should override this method """
