@@ -1,4 +1,4 @@
-from single_player_env import SinglePlayer, ACTION_SPACE_SIZE, STATE_SPACE_SIZE
+from single_player_env_parallel import SinglePlayer, ACTION_SPACE_SIZE, STATE_SPACE_SIZE
 from RL.dqn import DQNAgent
 from RL.utils import ReplayBuffer
 import numpy as np
@@ -21,11 +21,11 @@ class DQN(nn.Module):
         return self.model(x)
 
 
-MAX_REPLAY_BUFFER = 5000
-BATCH_SIZE = 128
-TARGET_NET_UPDATE_FREQ = 5
+MAX_REPLAY_BUFFER = 10_000_000
+BATCH_SIZE = 32
+TARGET_NET_UPDATE_FREQ = 100000
 MAIN_NET_TRAIN_FREQ = 1
-CURRENT_TRAIN_ID = f'2023-02-10-single-{BATCH_SIZE}-{TARGET_NET_UPDATE_FREQ}'
+CURRENT_TRAIN_ID = f'2023-02-13/multi-{BATCH_SIZE}-{TARGET_NET_UPDATE_FREQ}-0'
 ENV_COUNT = 20
 SAVE_INTERVAL = 10000
 
@@ -38,7 +38,7 @@ model.create_model(DQN(STATE_SPACE_SIZE, ACTION_SPACE_SIZE),
 model.create_buffer(ReplayBuffer(MAX_REPLAY_BUFFER, BATCH_SIZE * 10))
 model.e_min = 0.1
 
-sim = SinglePlayer(ENV_COUNT)
+sim = SinglePlayer(ENV_COUNT, CURRENT_TRAIN_ID)
 
 last_rewards = []
 avg_rewards = []
@@ -67,11 +67,12 @@ while sim.running:
         new_states.append(new_state)
         rewards.append(reward)
         dones.append(done)
-    model.learn(current_states, actions, new_states, rewards, dones)
+    if sim.step_count % 4 == 0:
+        model.learn(current_states, actions, new_states, rewards, dones)
 
     last_rewards.append(np.sum(rewards) / ENV_COUNT)
 
-    if sim.step_count % 100:
+    if sim.step_count % 100 == 0:
         info = ' '.join([
             f'e: {round(model.e, 4)}',
             f'r: {round(last_rewards[-1], 2)}',

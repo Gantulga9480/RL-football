@@ -1,4 +1,4 @@
-from single_player_env import SinglePlayer, ACTIONS, STATE_SPACE_SIZE
+from single_player_env_parallel import SinglePlayer, ACTIONS, STATE_SPACE_SIZE
 from RL.dqn import DQN
 import numpy as np
 
