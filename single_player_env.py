@@ -94,10 +94,10 @@ class Football:
         elif action == TURN_RIGHT:
             speed = self.players[0].speed()
             self.players[0].rotate(-Player.PLAYER_MAX_TURN_RATE / (speed + 1))
+        self.show()
         self.engine.step()
         self.ball.step()
         self.check_ball()
-        self.show()
         dir_now = self.players[0].direction()
         self.counter += 1
         if self.counter == (self.fps * 10):

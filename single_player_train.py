@@ -26,13 +26,13 @@ class DQN(nn.Module):
 MAX_REPLAY_BUFFER = 5000
 BATCH_SIZE = 64
 EPOCHS = 1
-TARGET_NET_UPDATE_FREQ = 10
+TARGET_NET_UPDATE_FREQ = 20
 MAIN_NET_TRAIN_FREQ = 1
-CURRENT_TRAIN_ID = '2023-02-10-single'
+CURRENT_TRAIN_ID = f'2023-02-10-single-{BATCH_SIZE}-{TARGET_NET_UPDATE_FREQ}'
 ENV_COUNT = 1
 SAVE_INTERVAL = 10000
 
-model = DQNAgent(STATE_SPACE_SIZE, ACTION_SPACE_SIZE, 0.003, 0.99, device="cuda:1")
+model = DQNAgent(STATE_SPACE_SIZE, ACTION_SPACE_SIZE, 0.003, 0.99, 0.999999, device="cuda:0")
 model.create_model(DQN(STATE_SPACE_SIZE, ACTION_SPACE_SIZE),
                    DQN(STATE_SPACE_SIZE, ACTION_SPACE_SIZE),
                    epochs=EPOCHS,
@@ -40,6 +40,7 @@ model.create_model(DQN(STATE_SPACE_SIZE, ACTION_SPACE_SIZE),
                    train_freq=MAIN_NET_TRAIN_FREQ,
                    update_freq=TARGET_NET_UPDATE_FREQ)
 model.create_buffer(ReplayBuffer(MAX_REPLAY_BUFFER, BATCH_SIZE * 10))
+model.e_min = 0.1
 
 sim = SinglePlayer(ENV_COUNT)
 
@@ -84,7 +85,7 @@ while sim.running:
 
     if sim.step_count % SAVE_INTERVAL == 0:
         avg_rewards.append(np.sum(last_rewards) / SAVE_INTERVAL)
-        path = '/'.join(['model', CURRENT_TRAIN_ID, f'model-{sim.step_count}.pt'])
+        path = '/'.join(['model', CURRENT_TRAIN_ID, f'model-{sim.step_count}-{round(model.e, 4)}.pt'])
         model.save_model(path)
 
 print(sim.step_count)
