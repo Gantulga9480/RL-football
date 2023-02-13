@@ -69,6 +69,11 @@ cdef class Ball(FreePolygonBody):
     cdef public bint is_free
 
 cdef class Player(DynamicPolygonBody):
-    cdef public int team_id
+    cdef readonly int team_id
     cdef public bint kicked
     cdef public bint has_ball
+    cdef readonly double PLAYER_SIZE
+    cdef readonly double PLAYER_MAX_SPEED
+    cdef readonly double PLAYER_SPEED_BALL
+    cdef readonly double PLAYER_MAX_TURN_RATE
+    cdef readonly double PLAYER_MAX_FOV

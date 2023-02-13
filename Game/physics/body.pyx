@@ -93,7 +93,7 @@ cdef class Body:
                 self.radius *= factor
 
     cpdef (double, double) position(self):
-        return self.shape.plane.parent_vector.get_head()
+        return self.shape.plane.get_CENTER()
 
     @cython.cdivision(True)
     cpdef double direction(self):
@@ -333,25 +333,20 @@ cdef class Ball(FreePolygonBody):
 @cython.optimize.unpack_method_calls(False)
 cdef class Player(DynamicPolygonBody):
 
-    PLAYER_SIZE = 30
-    PLAYER_MAX_SPEED = 10
-    PLAYER_SPEED_BALL = 7
-    PLAYER_MAX_TURN_RATE = 6
-    PLAYER_MAX_FOV = 120
-    TEAM_COLOR = ((0, 162, 232), (34, 177, 76))
-
     def __cinit__(self, *args, **kwargs):
-        pass
+        self.PLAYER_SIZE = 30
+        self.PLAYER_MAX_SPEED = 10
+        self.PLAYER_SPEED_BALL = 7
+        self.PLAYER_MAX_TURN_RATE = 6
+        self.PLAYER_MAX_FOV = 120
 
     def __init__(self,
                  int id,
                  int team_id,
-                 CartesianPlane plane,
-                 tuple size,
-                 double max_speed=1,
-                 double drag_coef=0.01,
-                 double friction_coef=0.3):
-        super().__init__(id, plane, size, max_speed, drag_coef, friction_coef)
+                 CartesianPlane plane):
+        super().__init__(id,
+                         plane.createPlane(-400 - (id-team_id) * self.PLAYER_SIZE * 2, 0),
+                         (self.PLAYER_SIZE,) * 5, self.PLAYER_SPEED_BALL, 0.01, 0.3)
         self.team_id = team_id
         self.kicked = False
         self.has_ball = False
@@ -376,8 +371,8 @@ cdef class Player(DynamicPolygonBody):
         self.kicked = False
         self.has_ball = False
 
-    def show(self, vertex=False, velocity=False):
-        circle(self.shape.plane.window, self.TEAM_COLOR[self.team_id], self.velocity.get_TAIL(), self.radius)
+    def show(self, color=(150, 150, 150), vertex=False, velocity=False):
+        circle(self.shape.plane.window, color, self.velocity.get_TAIL(), self.radius)
         super().show(vertex, velocity)
         if self.has_ball:
             circle(self.shape.plane.window, (255, 0, 0), self.velocity.get_TAIL(), 3)
