@@ -344,9 +344,7 @@ cdef class Player(DynamicPolygonBody):
                  int id,
                  int team_id,
                  CartesianPlane plane):
-        super().__init__(id,
-                         plane.createPlane(-400 - (id-team_id) * self.PLAYER_SIZE * 2, 0),
-                         (self.PLAYER_SIZE,) * 5, self.PLAYER_SPEED_BALL, 0.01, 0.3)
+        super().__init__(id, plane.createPlane(0, 0), (self.PLAYER_SIZE,) * 5, self.PLAYER_SPEED_BALL, 0.01, 0.3)
         self.team_id = team_id
         self.kicked = False
         self.has_ball = False
@@ -368,6 +366,7 @@ cdef class Player(DynamicPolygonBody):
         self.velocity.max = self.PLAYER_MAX_SPEED
         self.velocity.rotate(tmp)
         self.shape.rotate(tmp)
+        self.velocity.set_head(self.velocity.unit_vector(1))
         self.kicked = False
         self.has_ball = False
 
