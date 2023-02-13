@@ -15,7 +15,10 @@ class Body:
     def __init__(self, id: int, type: int) -> None: ...
 
     def position(self) -> tuple:
-        """(x, y) Coordinate in Cartesian system relative to it's parent plane"""
+        """
+        @return
+        (x, y) Coordinate in screen space. Use plane.to_xy to convert to Cartesian.
+        """
         ...
 
     def direction(self) -> None:

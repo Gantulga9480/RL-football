@@ -10,13 +10,11 @@ class DQN(nn.Module):
     def __init__(self, input_shape, output_shape) -> None:
         super().__init__()
         self.model = nn.Sequential(
-            nn.Linear(input_shape, 10),
+            nn.Linear(input_shape, 16),
             nn.ReLU(),
-            nn.Linear(10, 20),
+            nn.Linear(16, 16),
             nn.ReLU(),
-            nn.Linear(20, 10),
-            nn.ReLU(),
-            nn.Linear(10, output_shape)
+            nn.Linear(16, output_shape)
         )
 
     def forward(self, x):
@@ -24,18 +22,16 @@ class DQN(nn.Module):
 
 
 MAX_REPLAY_BUFFER = 5000
-BATCH_SIZE = 64
-EPOCHS = 1
-TARGET_NET_UPDATE_FREQ = 20
+BATCH_SIZE = 128
+TARGET_NET_UPDATE_FREQ = 5
 MAIN_NET_TRAIN_FREQ = 1
 CURRENT_TRAIN_ID = f'2023-02-10-single-{BATCH_SIZE}-{TARGET_NET_UPDATE_FREQ}'
-ENV_COUNT = 1
+ENV_COUNT = 20
 SAVE_INTERVAL = 10000
 
 model = DQNAgent(STATE_SPACE_SIZE, ACTION_SPACE_SIZE, 0.003, 0.99, 0.999999, device="cuda:0")
 model.create_model(DQN(STATE_SPACE_SIZE, ACTION_SPACE_SIZE),
                    DQN(STATE_SPACE_SIZE, ACTION_SPACE_SIZE),
-                   epochs=EPOCHS,
                    batchs=BATCH_SIZE,
                    train_freq=MAIN_NET_TRAIN_FREQ,
                    update_freq=TARGET_NET_UPDATE_FREQ)
