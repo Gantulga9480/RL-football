@@ -1,6 +1,5 @@
 from Game import Game, core
-from football import Football, ACTIONS, STOP, GO_FORWARD, TURN_LEFT, TURN_RIGHT, KICK, NOOP
-import random
+from football import Football, STOP, GO_FORWARD, TURN_LEFT, TURN_RIGHT, KICK, NOOP
 
 
 class Test(Game):
@@ -36,7 +35,7 @@ class Test(Game):
 
     def onEvent(self, event):
         if event.type == core.KEYUP:
-            if event.key == core.K_ESCAPE:
+            if event.key == core.K_q:
                 self.running = False
 
 

@@ -139,42 +139,47 @@ class Football:
         self.teamRight.reset()
 
     def check_ball(self):
-        tmp = self.ball.is_free
-        if self.ball.is_free:
-            dists = []
-            idx = []
-            for i, player in enumerate(self.players):
-                d = player.shape.plane.get_parent_vector().dist(self.ball.shape.plane.get_parent_vector())
-                if (d <= (player.radius + self.ball.radius)):
-                    dists.append(d)
-                    idx.append(i)
-                else:
-                    player.kicked = False
-            if idx.__len__() > 0:
-                p_idx = idx[np.argmin(dists)]
-                player = self.players[p_idx]
-                if player.kicked:
-                    pass
-                else:
-                    self.ball.velocity.head = (1, 0)
-                    self.ball.is_free = False
-                    player.has_ball = True
-                    player.velocity.max = player.PLAYER_SPEED_BALL
-                    self.current_player = p_idx
-        if self.ball.is_free:
-            pos = self.plane.to_xy(self.ball.position())
+        if not self.ball.is_out:
+            tmp = self.ball.is_free
+            if self.ball.is_free:
+                dists = []
+                idx = []
+                for i, player in enumerate(self.players):
+                    d = player.shape.plane.get_parent_vector().dist(self.ball.shape.plane.get_parent_vector())
+                    if (d <= (player.radius + self.ball.radius)):
+                        dists.append(d)
+                        idx.append(i)
+                    else:
+                        player.kicked = False
+                if idx.__len__() > 0:
+                    p_idx = idx[np.argmin(dists)]
+                    player = self.players[p_idx]
+                    if player.kicked:
+                        pass
+                    else:
+                        self.ball.velocity.head = (1, 0)
+                        self.ball.is_free = False
+                        player.has_ball = True
+                        player.velocity.max = player.PLAYER_SPEED_BALL
+                        self.current_player = p_idx
+            if self.ball.is_free:
+                pos = self.plane.to_xy(self.ball.position())
+            else:
+                if not tmp:
+                    for i, p in enumerate(self.players):
+                        if p.has_ball:
+                            self.current_player = i
+                            break
+                pos = self.plane.to_xy(self.players[self.current_player].shape.plane.CENTER)
+            if (pos[0] < self.plane.x_min + GOAL_AREA_WIDTH) and (-GOAL_AREA_HEIGHT / 2 < pos[1] < GOAL_AREA_HEIGHT / 2):
+                self.teamLeft.score += 1
+                self.players[self.current_player].has_ball = False
+                self.ball.reset((0, 0))
+            elif (pos[0] > self.plane.x_max - GOAL_AREA_WIDTH) and (-GOAL_AREA_HEIGHT / 2 < pos[1] < GOAL_AREA_HEIGHT / 2):
+                self.teamRight.score += 1
+                self.players[self.current_player].has_ball = False
+                self.ball.reset((0, 0))
         else:
-            if not tmp:
-                for i, p in enumerate(self.players):
-                    if p.has_ball:
-                        self.current_player = i
-                        break
-            pos = self.plane.to_xy(self.players[self.current_player].shape.plane.CENTER)
-        if (pos[0] < self.plane.x_min + GOAL_AREA_WIDTH) and (-GOAL_AREA_HEIGHT / 2 < pos[1] < GOAL_AREA_HEIGHT / 2):
-            self.teamLeft.score += 1
-            self.ball.reset((0, 0))
-        elif (pos[0] > self.plane.x_max - GOAL_AREA_WIDTH) and (-GOAL_AREA_HEIGHT / 2 < pos[1] < GOAL_AREA_HEIGHT / 2):
-            self.teamRight.score += 1
             self.ball.reset((0, 0))
 
     def create_wall(self, wall_width=120, wall_height=5, x_start=None, y_start=None):
@@ -183,7 +188,7 @@ class Football:
             self.bodies.append(
                 StaticRectangleBody(-1,
                                     CartesianPlane(self.window, (wall_width, wall_width),
-                                                   self.plane.createVector(-60, y)),
+                                                   self.plane.createVector(-self.size[0] // 2, y)),
                                     (wall_height, wall_width)))
             self.bodies.append(
                 StaticRectangleBody(-1,

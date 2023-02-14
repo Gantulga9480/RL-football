@@ -320,6 +320,30 @@ cdef class Ball(FreePolygonBody):
                  double drag_coef=0):
         super().__init__(id, plane, size, max_speed, drag_coef)
         self.is_free = True
+        self.is_out = False
+
+    cdef void USR_step(self):
+        cdef double v_len = floor(self.velocity.mag() * 1000.0) / 1000.0
+        cdef (double, double) xy
+        cdef (double, double) _xy
+        if v_len > 1:
+            if not self.is_attached:
+                xy = self.velocity.get_head()
+                _xy = self.velocity.unit_vector(1)
+                self.shape.plane.parent_vector.set_head((self.shape.plane.parent_vector.get_x() + xy[0] - _xy[0],
+                                                         self.shape.plane.parent_vector.get_y() + xy[1] - _xy[1]))
+            # Drag is applied even if it's attached to another body
+            if self.drag_coef:
+                self.velocity.add(-(v_len-1) * self.drag_coef)
+        else:
+            self.velocity.set_head(self.velocity.unit_vector(1))
+        if (self.shape.plane.parent_vector.get_x() < self.shape.plane.parent_vector.plane.x_min) or \
+            (self.shape.plane.parent_vector.get_x() > self.shape.plane.parent_vector.plane.x_max) or \
+             (self.shape.plane.parent_vector.get_y() < self.shape.plane.parent_vector.plane.y_min) or \
+              (self.shape.plane.parent_vector.get_y() > self.shape.plane.parent_vector.plane.y_max):
+              self.is_out = True
+        else:
+            self.is_out = False
 
     def reset(self, (double, double) pos):
         self.is_free = True
@@ -374,8 +398,8 @@ cdef class Player(DynamicPolygonBody):
         circle(self.shape.plane.window, color, self.velocity.get_TAIL(), self.radius)
         super().show(vertex, velocity)
         if self.has_ball:
-            circle(self.shape.plane.window, (255, 0, 0), self.velocity.get_TAIL(), 3)
-            circle(self.shape.plane.window, (0, 0, 0), self.velocity.get_TAIL(), 3, 1)
+            circle(self.shape.plane.window, (255, 0, 0), self.velocity.get_TAIL(), 10)
+            circle(self.shape.plane.window, (0, 0, 0), self.velocity.get_TAIL(), 10, 2)
 
     cdef void USR_resolve_collision(self, Body o, (double, double) dxy):
         if o.type == DYNAMIC:

@@ -67,6 +67,7 @@ cdef class Ray(FreeBody):
 
 cdef class Ball(FreePolygonBody):
     cdef public bint is_free
+    cdef readonly bint is_out
 
 cdef class Player(DynamicPolygonBody):
     cdef readonly int team_id
