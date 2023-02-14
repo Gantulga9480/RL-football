@@ -6,16 +6,17 @@ from .agent import Agent
 from .utils import ReplayBufferBase
 
 
-class DQNAgent(Agent):
+class DDPGAgent(Agent):
 
     def __init__(self, state_space_size: int, action_space_size: int, lr: float, y: float, e_decay: float = 0.99999, device: str = 'cpu', seed: int = 1) -> None:
-        super(DQNAgent, self).__init__(state_space_size, action_space_size, lr, y, e_decay)
+        super(DDPGAgent, self).__init__(state_space_size, action_space_size, lr, y, e_decay)
         torch.manual_seed(seed)
         np.random.seed(seed)
         self.target_model = None
         self.model = None
         self.buffer = None
         self.batchs = 0
+        self.epochs = 0
         self.device = device
         self.train_freq = 0
         self.update_freq = 0
