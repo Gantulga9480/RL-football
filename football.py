@@ -11,6 +11,8 @@ TEAM_RIGHT = 1
 TEAM_ID_OFFSET = 100
 TEAM_COLOR = [(0, 162, 232), (34, 177, 76)]
 
+PLAYER_ABILITY_POINT = 0.98
+
 BALL_SIZE = 20
 GOAL_AREA_WIDTH = 120
 GOAL_AREA_HEIGHT = 400
@@ -37,7 +39,7 @@ class TeamLeft:
         self.plane = plane.createPlane(100 - plane.CENTER[0], 0)
         for i in range(self.team_size):
             self.players.append(
-                Player(TEAM_LEFT * TEAM_ID_OFFSET + i, self.TEAM_ID, self.plane))
+                Player(TEAM_LEFT * TEAM_ID_OFFSET + i, self.TEAM_ID, self.plane, ability_point=PLAYER_ABILITY_POINT))
 
     def reset(self):
         self.score = 0
@@ -62,7 +64,7 @@ class TeamRight:
         self.plane = plane.createPlane(plane.CENTER[0] - 100, 0)
         for i in range(self.team_size):
             self.players.append(
-                Player(TEAM_RIGHT * TEAM_ID_OFFSET + i, self.TEAM_ID, self.plane))
+                Player(TEAM_RIGHT * TEAM_ID_OFFSET + i, self.TEAM_ID, self.plane, ability_point=PLAYER_ABILITY_POINT))
 
     def reset(self):
         self.score = 0
