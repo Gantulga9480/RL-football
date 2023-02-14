@@ -367,11 +367,13 @@ cdef class Player(DynamicPolygonBody):
     def __init__(self,
                  int id,
                  int team_id,
-                 CartesianPlane plane):
+                 CartesianPlane plane,
+                 double ability_point = 0.95):
         super().__init__(id, plane.createPlane(0, 0), (self.PLAYER_SIZE,) * 5, self.PLAYER_SPEED_BALL, 0.01, 0.3)
         self.team_id = team_id
         self.kicked = False
         self.has_ball = False
+        self.ability_point = ability_point
 
     def kick(self, FreePolygonBody ball, double power):
         cdef double d
@@ -408,16 +410,17 @@ cdef class Player(DynamicPolygonBody):
             self.shape.plane.parent_vector.set_head((self.shape.plane.parent_vector.head.x.num + -dxy[0]/2, self.shape.plane.parent_vector.head.y.num + -dxy[1]/2))
             o.shape.plane.parent_vector.set_head((o.shape.plane.parent_vector.head.x.num + dxy[0]/2, o.shape.plane.parent_vector.head.y.num + dxy[1]/2))
             if self.team_id != o.team_id:
-                if self.has_ball:
-                    self.has_ball = False
-                    self.velocity.max = self.PLAYER_MAX_SPEED
-                    o.has_ball = True
-                    o.velocity.max = self.PLAYER_SPEED_BALL
-                elif o.has_ball:
-                    self.has_ball = True
-                    self.velocity.max = self.PLAYER_SPEED_BALL
-                    o.has_ball = False
-                    o.velocity.max = self.PLAYER_MAX_SPEED
+                if np.random.random() > self.ability_point:
+                    if self.has_ball:
+                        self.has_ball = False
+                        self.velocity.max = self.PLAYER_MAX_SPEED
+                        o.has_ball = True
+                        o.velocity.max = self.PLAYER_SPEED_BALL
+                    elif o.has_ball:
+                        self.has_ball = True
+                        self.velocity.max = self.PLAYER_SPEED_BALL
+                        o.has_ball = False
+                        o.velocity.max = self.PLAYER_MAX_SPEED
         elif o.type == STATIC:
             self.velocity.scale(self.friction_coef)
             self.shape.plane.parent_vector.set_head((self.shape.plane.parent_vector.head.x.num + -dxy[0], self.shape.plane.parent_vector.head.y.num + -dxy[1]))

@@ -70,6 +70,7 @@ cdef class Ball(FreePolygonBody):
     cdef readonly bint is_out
 
 cdef class Player(DynamicPolygonBody):
+    cdef double ability_point
     cdef readonly int team_id
     cdef public bint kicked
     cdef public bint has_ball
