@@ -8,6 +8,7 @@ import numpy as np
 
 TEAM_LEFT = 0
 TEAM_RIGHT = 1
+TEAM_ID_OFFSET = 100
 TEAM_COLOR = [(0, 162, 232), (34, 177, 76)]
 
 BALL_SIZE = 20
@@ -36,7 +37,7 @@ class TeamLeft:
         self.plane = plane.createPlane(100 - plane.CENTER[0], 0)
         for i in range(self.team_size):
             self.players.append(
-                Player(TEAM_LEFT + i, self.TEAM_ID, self.plane))
+                Player(TEAM_LEFT * TEAM_ID_OFFSET + i, self.TEAM_ID, self.plane))
 
     def reset(self):
         self.score = 0
@@ -61,7 +62,7 @@ class TeamRight:
         self.plane = plane.createPlane(plane.CENTER[0] - 100, 0)
         for i in range(self.team_size):
             self.players.append(
-                Player(TEAM_RIGHT + i, self.TEAM_ID, self.plane))
+                Player(TEAM_RIGHT * TEAM_ID_OFFSET + i, self.TEAM_ID, self.plane))
 
     def reset(self):
         self.score = 0
