@@ -18,7 +18,7 @@ cdef class EnginePolygon:
     @cython.nonecheck(False)
     @cython.initializedcheck(False)
     def step(self):
-        cdef int n = self.bodies.shape[0]
+        cdef int n = <int>self.bodies.shape[0]
         cdef int i, j
         cdef (double, double) dxy
         # Check for every body ...
