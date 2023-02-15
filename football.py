@@ -32,13 +32,14 @@ class TeamLeft:
 
     TEAM_ID = TEAM_LEFT
 
-    def __init__(self, team_size: int, plane: CartesianPlane) -> None:
+    def __init__(self, team_size: int, plane: CartesianPlane, goalkeeper: bool = True) -> None:
         self.score = 0
         self.players: list[Player] = []
         self.team_size = team_size
         self.parent_plane = plane
         self.plane = plane.createPlane(GOAL_AREA_WIDTH - plane.CENTER[0], 0)
-        self.players.append(GoalKeeper(TEAM_LEFT * TEAM_ID_OFFSET, self.TEAM_ID, self.plane))
+        if goalkeeper:
+            self.players.append(GoalKeeper(TEAM_LEFT * TEAM_ID_OFFSET, self.TEAM_ID, self.plane))
         for i in range(self.team_size):
             self.players.append(
                 Player(TEAM_LEFT * TEAM_ID_OFFSET + i + 1, self.TEAM_ID, self.plane, ability_point=PLAYER_ABILITY_POINT))
@@ -58,13 +59,14 @@ class TeamRight:
 
     TEAM_ID = TEAM_RIGHT
 
-    def __init__(self, team_size: int, plane: CartesianPlane) -> None:
+    def __init__(self, team_size: int, plane: CartesianPlane, goalkeeper: bool = True) -> None:
         self.score = 0
         self.players: list[Player] = []
         self.team_size = team_size
         self.parent_plane = plane
         self.plane = plane.createPlane(plane.CENTER[0] - GOAL_AREA_WIDTH, 0)
-        self.players.append(GoalKeeper(TEAM_RIGHT * TEAM_ID_OFFSET, self.TEAM_ID, self.plane))
+        if goalkeeper:
+            self.players.append(GoalKeeper(TEAM_RIGHT * TEAM_ID_OFFSET, self.TEAM_ID, self.plane))
         for i in range(self.team_size):
             self.players.append(
                 Player(TEAM_RIGHT * TEAM_ID_OFFSET + i + 1, self.TEAM_ID, self.plane, ability_point=PLAYER_ABILITY_POINT))
@@ -95,12 +97,9 @@ class Football:
         self.bodies: list[Body] = []
 
         self.plane = CartesianPlane(self.window, self.size, frame_rate=self.fps)
-        if full:
-            self.create_wall()
-        else:
-            self.create_wall(x_start=0)
-        self.teamRight = TeamRight(self.team_size, self.plane)
-        self.teamLeft = TeamLeft(self.team_size, self.plane)
+        self.create_wall()
+        self.teamRight = TeamRight(self.team_size, self.plane, goalkeeper=full)
+        self.teamLeft = TeamLeft(self.team_size, self.plane, goalkeeper=full)
 
         for player in self.teamRight.players:
             self.players.append(player)
@@ -186,8 +185,8 @@ class Football:
         else:
             self.ball.reset((0, 0))
 
-    def create_wall(self, wall_width=120, wall_height=5, x_start=None, y_start=None):
-        y = y_start if y_start is not None else self.size[1] // 2 - wall_width // 2 - wall_height // 2
+    def create_wall(self, wall_width=120, wall_height=5):
+        y = self.size[1] // 2 - wall_width // 2 - wall_height // 2
         for _ in range(self.size[1] // wall_width):
             self.bodies.append(
                 StaticRectangleBody(-1,
@@ -201,7 +200,7 @@ class Football:
                                     (wall_height, wall_width)))
             y -= wall_width
 
-        x = x_start if x_start is not None else -self.size[0] // 2 + wall_width // 2
+        x = -self.size[0] // 2 + wall_width // 2
         for _ in range(self.size[0] // wall_width):
             vec = self.plane.createVector(x, self.size[1] // 2)
             self.bodies.append(

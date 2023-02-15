@@ -1,5 +1,7 @@
 from Game import Game
 from Game import core
+from Game.graphic import CartesianPlane
+from Game.physics import StaticRectangleBody
 from football import Football, NOOP
 
 
@@ -51,6 +53,35 @@ class Playground(Football):
         self.ball.reset((300, 0))
         self.teamRight.reset()
         return self.get_state()
+
+    def create_wall(self, wall_width=120, wall_height=5):
+        y = self.size[1] // 2 - wall_width // 2 - wall_height // 2
+        for _ in range(self.size[1] // wall_width):
+            self.bodies.append(
+                StaticRectangleBody(-1,
+                                    CartesianPlane(self.window, (wall_width, wall_width),
+                                                   self.plane.createVector(-60 // 2, y)),
+                                    (wall_height, wall_width)))
+            self.bodies.append(
+                StaticRectangleBody(-1,
+                                    CartesianPlane(self.window, (wall_width, wall_width),
+                                                   self.plane.createVector(self.size[0] // 2, y)),
+                                    (wall_height, wall_width)))
+            y -= wall_width
+
+        x = 0
+        for _ in range(self.size[0] // wall_width):
+            vec = self.plane.createVector(x, self.size[1] // 2)
+            self.bodies.append(
+                StaticRectangleBody(-1,
+                                    CartesianPlane(self.window, (wall_width, wall_width), vec),
+                                    (wall_width, wall_height)))
+            vec = self.plane.createVector(x, -self.size[1] // 2)
+            self.bodies.append(
+                StaticRectangleBody(-1,
+                                    CartesianPlane(self.window, (wall_width, wall_width), vec),
+                                    (wall_width, wall_height)))
+            x += wall_width
 
 
 class SinglePlayerFootball(Game):

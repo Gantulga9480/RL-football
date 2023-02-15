@@ -14,7 +14,7 @@ class Test(Game):
         self.football = Football(self.window, self.size, self.fps, self.team_size, True)
 
     def loop(self):
-        actions = [NOOP for _ in range(self.team_size * 2)]
+        actions = [NOOP for _ in range(self.team_size * 2 + 2)]  # +2 goal keeper agents
         idx = self.football.current_player
         actions[idx] = NOOP
         if self.keys[core.K_UP]:
@@ -37,6 +37,11 @@ class Test(Game):
         if event.type == core.KEYUP:
             if event.key == core.K_q:
                 self.running = False
+            if event.key == core.K_a:
+                if self.football.current_player < self.football.players.__len__() - 1:
+                    self.football.current_player += 1
+                else:
+                    self.football.current_player = 0
 
 
 Test().loop_forever()
