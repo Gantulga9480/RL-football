@@ -2,7 +2,7 @@ from Game import Game
 from Game import core
 from Game.graphic import CartesianPlane
 from Game.physics import StaticRectangleBody
-from football import Football, NOOP
+from football import Football, NOOP, BALL_SPEED_MAX
 
 
 ACTION_SPACE_SIZE = 6
@@ -20,31 +20,30 @@ class Playground(Football):
         self.counter += 1
         if self.counter == (self.fps * 10):
             self.done = True
-        if self.teamRight.score:
-            self.done = True
         ball_pos = self.plane.to_xy(self.ball.position())
-        if ball_pos[0] > self.plane.x_max or ball_pos[0] < self.plane.x_min or \
-                ball_pos[1] > self.plane.y_max or ball_pos[1] < self.plane.y_min:
+        if ball_pos[0] > self.plane.x_max or ball_pos[0] < -60 or ball_pos[1] > self.plane.y_max or ball_pos[1] < self.plane.y_min:
             self.done = True
-        if ball_pos[0] < -60:
-            self.done = True
-        if self.done and not self.teamRight.score:
-            reward = -100
+        if self.done and self.teamRight.score == 0:
+            reward = -1
         else:
             if self.teamRight.score:
-                reward = self.teamRight.score * 100
+                self.done = True
+                reward = 1
             else:
                 reward = 0
         return self.get_state(), reward, self.done
 
     def get_state(self):
         ball_pos = self.plane.to_xy(self.ball.position())
-        ball_dir = self.ball.direction()
-        ball_vel = self.ball.speed()
+        ball_dir = self.ball.direction() / 360
+        ball_spd = self.ball.speed() / BALL_SPEED_MAX
         player_pos = self.plane.to_xy(self.players[0].position())
-        dir_now = self.teamRight.players[0].direction()
-        speed = self.players[0].speed()
-        state = [ball_pos[0], ball_pos[1], ball_dir, ball_vel, player_pos[0], player_pos[1], dir_now, speed]
+        player_dir = self.teamRight.players[0].direction() / 360
+        player_spd = self.players[0].speed() / self.players[0].PLAYER_MAX_SPEED
+        state = [ball_pos[0] / self.plane.x_max,
+                 ball_pos[1] / self.plane.x_max, ball_dir, ball_spd,
+                 player_pos[0] / self.plane.x_max,
+                 player_pos[1] / self.plane.x_max, player_dir, player_spd]
         return state
 
     def reset(self):

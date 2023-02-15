@@ -14,6 +14,7 @@ TEAM_COLOR = [(0, 162, 232), (34, 177, 76)]
 
 PLAYER_ABILITY_POINT = 0.98
 
+BALL_SPEED_MAX = 10
 BALL_SIZE = 20
 GOAL_AREA_WIDTH = 120
 GOAL_AREA_HEIGHT = 400
@@ -129,7 +130,7 @@ class Football:
                 elif action == TURN_RIGHT:
                     self.players[i].rotate(-self.players[i].PLAYER_MAX_TURN_RATE / (speed + 1))
                 elif action == KICK:
-                    self.players[i].kick(self.ball, 10)
+                    self.players[i].kick(self.ball, BALL_SPEED_MAX)
                 elif actions == NOOP:
                     pass
         self.engine.step()
@@ -262,4 +263,3 @@ class Football:
                         v.show()
         if self.ball.is_free:
             self.ball.show()
-        self.teamLeft.plane.show()
