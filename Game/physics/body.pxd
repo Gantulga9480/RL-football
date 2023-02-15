@@ -79,3 +79,14 @@ cdef class Player(DynamicPolygonBody):
     cdef readonly double PLAYER_SPEED_BALL
     cdef readonly double PLAYER_MAX_TURN_RATE
     cdef readonly double PLAYER_MAX_FOV
+
+cdef class GoalKeeper(DynamicPolygonBody):
+    cdef double ability_point
+    cdef readonly int team_id
+    cdef public bint kicked
+    cdef public bint has_ball
+    cdef readonly double PLAYER_SIZE
+    cdef readonly double PLAYER_MAX_SPEED
+    cdef readonly double PLAYER_SPEED_BALL
+    cdef readonly double PLAYER_MAX_TURN_RATE
+    cdef readonly double PLAYER_MAX_FOV
