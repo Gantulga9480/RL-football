@@ -1,6 +1,7 @@
 from Game.graphic import CartesianPlane
 from Game.physics import (Player, Ball, Body,
-                          StaticRectangleBody)
+                          StaticRectangleBody,
+                          GoalKeeper)
 from Game.physics import EnginePolygon
 from Game import core
 import numpy as np
@@ -36,10 +37,11 @@ class TeamLeft:
         self.players: list[Player] = []
         self.team_size = team_size
         self.parent_plane = plane
-        self.plane = plane.createPlane(100 - plane.CENTER[0], 0)
+        self.plane = plane.createPlane(GOAL_AREA_WIDTH - plane.CENTER[0], 0)
+        self.players.append(GoalKeeper(TEAM_LEFT * TEAM_ID_OFFSET, self.TEAM_ID, self.plane))
         for i in range(self.team_size):
             self.players.append(
-                Player(TEAM_LEFT * TEAM_ID_OFFSET + i, self.TEAM_ID, self.plane, ability_point=PLAYER_ABILITY_POINT))
+                Player(TEAM_LEFT * TEAM_ID_OFFSET + i + 1, self.TEAM_ID, self.plane, ability_point=PLAYER_ABILITY_POINT))
 
     def reset(self):
         self.score = 0
@@ -61,10 +63,11 @@ class TeamRight:
         self.players: list[Player] = []
         self.team_size = team_size
         self.parent_plane = plane
-        self.plane = plane.createPlane(plane.CENTER[0] - 100, 0)
+        self.plane = plane.createPlane(plane.CENTER[0] - GOAL_AREA_WIDTH, 0)
+        self.players.append(GoalKeeper(TEAM_RIGHT * TEAM_ID_OFFSET, self.TEAM_ID, self.plane))
         for i in range(self.team_size):
             self.players.append(
-                Player(TEAM_RIGHT * TEAM_ID_OFFSET + i, self.TEAM_ID, self.plane, ability_point=PLAYER_ABILITY_POINT))
+                Player(TEAM_RIGHT * TEAM_ID_OFFSET + i + 1, self.TEAM_ID, self.plane, ability_point=PLAYER_ABILITY_POINT))
 
     def reset(self):
         self.score = 0
@@ -87,10 +90,9 @@ class Football:
 
         self.players: list[Player] = []
         self.ball: Ball = None
-        self.current_player = -1
-        self.last_player = -1
+        self.current_player = 0
+        self.last_player = None
         self.bodies: list[Body] = []
-        self.done = False
 
         self.plane = CartesianPlane(self.window, self.size, frame_rate=self.fps)
         if full:
@@ -136,7 +138,6 @@ class Football:
         self.check_ball()
 
     def reset(self):
-        self.done = False
         self.ball.reset((0, 0))
         self.teamLeft.reset()
         self.teamRight.reset()
@@ -218,12 +219,18 @@ class Football:
         width = self.size[0] - GOAL_AREA_WIDTH * 2
         height = self.size[1] - 60 * 2
         core.draw.rect(self.window, (0, 0, 0), (GOAL_AREA_WIDTH, 60, width, height), 1)  # Touch line
+        core.draw.circle(self.plane.window,
+                         (0, 0, 0),
+                         (0 + GOAL_AREA_WIDTH, self.size[1] / 2), 200, 1)
         core.draw.rect(self.plane.window,
                        TEAM_COLOR[TEAM_LEFT],
                        (0, self.size[1] / 2 - GOAL_AREA_HEIGHT / 2, GOAL_AREA_WIDTH, GOAL_AREA_HEIGHT))
         core.draw.rect(self.plane.window,
                        (0, 0, 0),
                        (0, self.size[1] / 2 - GOAL_AREA_HEIGHT / 2, GOAL_AREA_WIDTH, GOAL_AREA_HEIGHT), 1)
+        core.draw.circle(self.plane.window,
+                         (0, 0, 0),
+                         (self.size[0] - GOAL_AREA_WIDTH, self.size[1] / 2), 200, 1)
         core.draw.rect(self.plane.window,
                        TEAM_COLOR[TEAM_RIGHT],
                        (self.size[0] - GOAL_AREA_WIDTH, self.size[1] / 2 - GOAL_AREA_HEIGHT / 2, GOAL_AREA_WIDTH, GOAL_AREA_HEIGHT))
@@ -231,7 +238,7 @@ class Football:
                        (0, 0, 0),
                        (self.size[0] - GOAL_AREA_WIDTH, self.size[1] / 2 - GOAL_AREA_HEIGHT / 2, GOAL_AREA_WIDTH, GOAL_AREA_HEIGHT), 1)
         for body in self.bodies:
-            if isinstance(body, Player):
+            if isinstance(body, (Player, GoalKeeper)):
                 body.show(TEAM_COLOR[body.team_id])
             else:
                 body.show()
@@ -256,3 +263,4 @@ class Football:
                         v.show()
         if self.ball.is_free:
             self.ball.show()
+        self.teamLeft.plane.show()
