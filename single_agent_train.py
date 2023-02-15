@@ -34,7 +34,7 @@ CURRENT_TRAIN_ID = f'2023-02-13/single-{BATCH_SIZE}-{TARGET_NET_UPDATE_FREQ}-{AC
 
 sim = SinglePlayerFootball(CURRENT_TRAIN_ID)
 
-model = DQNAgent(STATE_SPACE_SIZE, ACTION_SPACE_SIZE, 0.003, 0.99, 0.9999999, device="cuda:1")
+model = DQNAgent(STATE_SPACE_SIZE, ACTION_SPACE_SIZE, 0.003, 0.99, 0.9999999, device="cuda:0")
 model.create_model(DQN(STATE_SPACE_SIZE, ACTION_SPACE_SIZE),
                    DQN(STATE_SPACE_SIZE, ACTION_SPACE_SIZE),
                    batchs=BATCH_SIZE,
