@@ -23,11 +23,11 @@ class DQN(nn.Module):
         return self.model(x)
 
 
-MAX_REPLAY_BUFFER = 10_000_000
+MAX_REPLAY_BUFFER = 1_000_000
 BATCH_SIZE = 128
 TARGET_NET_UPDATE_FREQ = 100_000
 MAIN_NET_TRAIN_FREQ = 1
-ACTION_REPEAT = 4
+ACTION_REPEAT = 1
 SAVE_INTERVAL = 100_000
 CURRENT_TRAIN_ID = f'2023-02-13/single-{BATCH_SIZE}-{TARGET_NET_UPDATE_FREQ}-{ACTION_REPEAT}'
 
@@ -42,6 +42,7 @@ model.create_model(DQN(STATE_SPACE_SIZE, ACTION_SPACE_SIZE),
                    update_freq=TARGET_NET_UPDATE_FREQ)
 model.create_buffer(ReplayBuffer(MAX_REPLAY_BUFFER, 100_000))
 model.e_min = 0.1
+
 
 avg_rewards = []
 action = None
@@ -61,6 +62,10 @@ while sim.running:
         if sim.step_count % SAVE_INTERVAL == 0 and model.e < 0.5:
             path = '/'.join(['model', CURRENT_TRAIN_ID, f'model-{sim.step_count}-{round(model.e, 4)}.pt'])
             model.save_model(path)
+        if sim.step_count % 10 == 0:
+            for i in range(10):
+                print(model.buffer.buffer.pop())
+            quit()
 
     avg_rewards.append(np.mean(episode_rewards))
     print(' * '.join([f'e: {round(model.e, 4)}',
@@ -71,6 +76,9 @@ print(sim.step_count)
 # save trained model
 path = '/'.join(['model', CURRENT_TRAIN_ID, 'model.pt'])
 model.save_model(path)
+
+with open('/'.join(['model', CURRENT_TRAIN_ID, 'model_info.txt']), 'w') as f:
+    f.write(model.model.__repr__())
 
 # save training reward history
 with open('/'.join(['model', CURRENT_TRAIN_ID, 'reward_hist.csv']), 'w') as f:
