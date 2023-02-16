@@ -15,9 +15,8 @@ args = parser.parse_args()
 MAX_REPLAY_BUFFER = 1_000_000
 BATCH_SIZE = 1024
 TARGET_NET_UPDATE_FREQ = 1000
-ACTION_REPEAT = 3
 SAVE_INTERVAL = 10000
-CURRENT_TRAIN_ID = f'2023-02-15/single-b{BATCH_SIZE}-t{TARGET_NET_UPDATE_FREQ}-r{ACTION_REPEAT}-tanh'
+CURRENT_TRAIN_ID = f'2023-02-15/single-b{BATCH_SIZE}-t{TARGET_NET_UPDATE_FREQ}-tanh'
 
 
 sim = SinglePlayerFootball(CURRENT_TRAIN_ID)
@@ -37,11 +36,9 @@ while sim.running:
     episode_rewards = []
     state = sim.env.reset()
     while not sim.loop_once():
-        if sim.step_count % ACTION_REPEAT == 0:
-            action = model.policy(state)
+        action = model.policy(state)
         n_state, reward, done = sim.step(action)
-        if sim.step_count % ACTION_REPEAT == 0:
-            model.learn(state, action, n_state, reward, done)
+        model.learn(state, action, n_state, reward, done)
 
         state = n_state
 
