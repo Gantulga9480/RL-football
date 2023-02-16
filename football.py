@@ -178,13 +178,9 @@ class Football:
             if (pos[0] < self.plane.x_min + GOAL_AREA_WIDTH) and (-GOAL_AREA_HEIGHT / 2 < pos[1] < GOAL_AREA_HEIGHT / 2):
                 self.teamLeft.score += 1
                 self.players[self.current_player].has_ball = False
-                self.ball.reset((0, 0))
             elif (pos[0] > self.plane.x_max - GOAL_AREA_WIDTH) and (-GOAL_AREA_HEIGHT / 2 < pos[1] < GOAL_AREA_HEIGHT / 2):
                 self.teamRight.score += 1
                 self.players[self.current_player].has_ball = False
-                self.ball.reset((0, 0))
-        else:
-            self.ball.reset((0, 0))
 
     def create_wall(self, wall_width=120, wall_height=5):
         y = self.size[1] // 2 - wall_width // 2 - wall_height // 2

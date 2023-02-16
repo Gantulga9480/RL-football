@@ -21,7 +21,7 @@ class Playground(Football):
         if self.counter == (self.fps * 10):
             self.done = True
         ball_pos = self.plane.to_xy(self.ball.position())
-        if ball_pos[0] > self.plane.x_max or ball_pos[0] < -60 or ball_pos[1] > self.plane.y_max or ball_pos[1] < self.plane.y_min:
+        if self.ball.is_out or ball_pos[0] < -60:
             self.done = True
         if self.done and self.teamRight.score == 0:
             reward = -1

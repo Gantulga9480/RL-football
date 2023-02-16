@@ -22,7 +22,7 @@ CURRENT_TRAIN_ID = f'2023-02-15/single-b{BATCH_SIZE}-t{TARGET_NET_UPDATE_FREQ}-r
 
 sim = SinglePlayerFootball(CURRENT_TRAIN_ID)
 
-model = DQNAgent(STATE_SPACE_SIZE, ACTION_SPACE_SIZE, 0.003, 0.99, 0.999999, device="cuda:1")
+model = DQNAgent(STATE_SPACE_SIZE, ACTION_SPACE_SIZE, 0.003, 0.99, 0.999999, device="cuda:0")
 model.create_model(DQN, batchs=BATCH_SIZE, target_update_freq=TARGET_NET_UPDATE_FREQ)
 model.create_buffer(ReplayBuffer(MAX_REPLAY_BUFFER, 50_000))
 model.e_min = 0.1
@@ -42,6 +42,8 @@ while sim.running:
         n_state, reward, done = sim.step(action)
         if sim.step_count % ACTION_REPEAT == 0:
             model.learn(state, action, n_state, reward, done)
+
+        state = n_state
 
         episode_rewards.append(reward)
 
