@@ -7,10 +7,10 @@ import numpy as np
 
 
 ACTION_SPACE_SIZE = 6
-STATE_SPACE_SIZE = 8
+STATE_SPACE_SIZE = 9
 
 
-class Playground(Football):
+class RLFootball(Football):
 
     def __init__(self, window, size, fps, team_size, full: bool = True) -> None:
         super().__init__(window, size, fps, team_size, full)
@@ -41,10 +41,16 @@ class Playground(Football):
         player_pos = self.plane.to_xy(self.players[0].position())
         player_dir = self.teamRight.players[0].direction() / 360
         player_spd = self.players[0].speed() / self.players[0].PLAYER_MAX_SPEED
+        has_ball = self.players[0].has_ball
         state = [ball_pos[0] / self.plane.x_max,
-                 ball_pos[1] / self.plane.x_max, ball_dir, ball_spd,
+                 ball_pos[1] / self.plane.y_max,
+                 ball_dir,
+                 ball_spd,
                  player_pos[0] / self.plane.x_max,
-                 player_pos[1] / self.plane.x_max, player_dir, player_spd]
+                 player_pos[1] / self.plane.y_max,
+                 player_dir,
+                 player_spd,
+                 has_ball]
         return np.array(state)
 
     def reset(self):
@@ -92,7 +98,7 @@ class SinglePlayerFootball(Game):
         self.fps = 30
         self.set_window()
         self.set_title(title)
-        self.env: Playground = None
+        self.env: RLFootball = None
         self.team_size = 1
         self.step_count = 0
         self.setup()
@@ -105,7 +111,7 @@ class SinglePlayerFootball(Game):
         return self.env.step([action])
 
     def setup(self):
-        self.env = Playground(self.window, self.size, self.fps, self.team_size, False)
+        self.env = RLFootball(self.window, self.size, self.fps, self.team_size, False)
 
     def loop_once(self):
         super().loop_once()
