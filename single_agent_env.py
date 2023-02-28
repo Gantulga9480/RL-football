@@ -3,6 +3,7 @@ from Game import core
 from Game.graphic import CartesianPlane
 from Game.physics import StaticRectangleBody
 from football import Football, NOOP, BALL_SPEED_MAX
+import numpy as np
 
 
 ACTION_SPACE_SIZE = 6
@@ -44,7 +45,7 @@ class Playground(Football):
                  ball_pos[1] / self.plane.x_max, ball_dir, ball_spd,
                  player_pos[0] / self.plane.x_max,
                  player_pos[1] / self.plane.x_max, player_dir, player_spd]
-        return state
+        return np.array(state)
 
     def reset(self):
         self.counter = 0
@@ -95,6 +96,9 @@ class SinglePlayerFootball(Game):
         self.team_size = 1
         self.step_count = 0
         self.setup()
+
+    def reset(self):
+        return self.env.reset()
 
     def step(self, action: int = NOOP):
         self.step_count += 1
