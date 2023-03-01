@@ -77,11 +77,7 @@ class DeepQNetworkAgent(DeepAgent):
             self.decay_epsilon()
 
     def target_update_hard(self):
-        if self.model:
-            self.target_model.load_state_dict(self.model.state_dict())
-        else:
-            print('Model not created!')
-            exit()
+        self.target_model.load_state_dict(self.model.state_dict())
 
     def target_update_soft(self):
         for target_param, local_param in zip(self.target_model.parameters(), self.model.parameters()):
