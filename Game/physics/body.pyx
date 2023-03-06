@@ -396,8 +396,8 @@ cdef class Player(DynamicPolygonBody):
         self.shape.plane.parent_vector.set_head(position)
         self.velocity.max = self.PLAYER_MAX_SPEED
         self.velocity.rotate(tmp)
-        self.shape.rotate(tmp)
         self.velocity.set_head(self.velocity.unit_vector(1))
+        self.shape.rotate(tmp)
         self.kicked = False
         self.has_ball = False
 
@@ -457,9 +457,12 @@ cdef class GoalKeeper(DynamicPolygonBody):
         cdef double d
         if self.has_ball:
             power += 1
-            ball.velocity.set_head(self.velocity.unit_vector(power))
-            ball.shape.plane.parent_vector.set_head(ball.shape.plane.parent_vector.plane.to_xy(self.shape.plane.get_CENTER()))
             ball.is_free = True
+            ball.velocity.set_head_ref(point2d(1, 0))
+            ball.velocity.set_head(self.velocity.unit_vector(power))
+            ball.shape.plane.parent_vector.set_head_ref(point2d(1, 0))
+            ball.shape.plane.parent_vector.set_head(self.shape.plane.parent_vector.get_head())
+
             self.velocity.max = self.PLAYER_MAX_SPEED
             self.kicked = True
             self.has_ball = False
@@ -469,8 +472,8 @@ cdef class GoalKeeper(DynamicPolygonBody):
         self.shape.plane.parent_vector.set_head(position)
         self.velocity.max = self.PLAYER_MAX_SPEED
         self.velocity.rotate(tmp)
-        self.shape.rotate(tmp)
         self.velocity.set_head(self.velocity.unit_vector(1))
+        self.shape.rotate(tmp)
         self.kicked = False
         self.has_ball = False
 
@@ -489,6 +492,7 @@ cdef class GoalKeeper(DynamicPolygonBody):
             o.shape.plane.parent_vector.set_head((o.shape.plane.parent_vector.head.x.num + dxy[0]/2, o.shape.plane.parent_vector.head.y.num + dxy[1]/2))
             if self.team_id != o.team_id:
                 if np.random.random() > self.ability_point:
+                    #TODO fix ball ref
                     if self.has_ball:
                         self.has_ball = False
                         self.velocity.max = self.PLAYER_MAX_SPEED

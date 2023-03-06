@@ -2,7 +2,7 @@ from Game import Game
 from Game import core
 from Game.graphic import CartesianPlane
 from Game.physics import StaticRectangleBody
-from football import Football, NOOP, BALL_SPEED_MAX, STOP, GO_FORWARD, TURN_LEFT, TURN_RIGHT, KICK
+from football import Football, NOOP, BALL_SPEED_MAX, STOP, GO_FORWARD, TURN_LEFT, TURN_RIGHT, KICK, GOAL_AREA_WIDTH
 import numpy as np
 
 
@@ -20,16 +20,19 @@ class RLFootball(Football):
     def step(self, actions: list = None):
         super().step(actions)
         self.counter += 1
-        if self.counter == (self.fps * 100):
+        if self.counter == (self.fps * 10):
             self.done = True
         ball_pos = self.plane.to_xy(self.ball.position())
-        if self.ball.is_out or ball_pos[0] < -60:
+        if self.ball.is_out or ball_pos[0] < 0 or ball_pos[0] > self.size[0] // 2 - GOAL_AREA_WIDTH \
+                or ball_pos[1] < -self.size[1] // 2 + GOAL_AREA_WIDTH // 2 or ball_pos[1] > self.size[1] // 2 - GOAL_AREA_WIDTH // 2:
             self.done = True
         if self.teamRight.score:
             self.done = True
-            reward = 0
-        else:
+            reward = 1
+        elif self.done and not self.teamRight.score:
             reward = -1
+        else:
+            reward = 0
         return self.get_state(), reward, self.done
 
     def get_state(self):
@@ -60,27 +63,28 @@ class RLFootball(Football):
 
     def create_wall(self, wall_width=120, wall_height=5):
         y = self.size[1] // 2 - wall_width // 2 - wall_height // 2
+        pad = 40
         for _ in range(self.size[1] // wall_width):
             self.bodies.append(
                 StaticRectangleBody(-1,
                                     CartesianPlane(self.window, (wall_width, wall_width),
-                                                   self.plane.createVector(-60 // 2, y)),
+                                                   self.plane.createVector(-pad // 2, y)),
                                     (wall_height, wall_width)))
             self.bodies.append(
                 StaticRectangleBody(-1,
                                     CartesianPlane(self.window, (wall_width, wall_width),
-                                                   self.plane.createVector(self.size[0] // 2, y)),
+                                                   self.plane.createVector(self.size[0] // 2 - GOAL_AREA_WIDTH + pad, y)),
                                     (wall_height, wall_width)))
             y -= wall_width
 
         x = 0
         for _ in range(self.size[0] // wall_width):
-            vec = self.plane.createVector(x, self.size[1] // 2)
+            vec = self.plane.createVector(x, self.size[1] // 2 - GOAL_AREA_WIDTH // 2 + pad)
             self.bodies.append(
                 StaticRectangleBody(-1,
                                     CartesianPlane(self.window, (wall_width, wall_width), vec),
                                     (wall_width, wall_height)))
-            vec = self.plane.createVector(x, -self.size[1] // 2)
+            vec = self.plane.createVector(x, -self.size[1] // 2 + GOAL_AREA_WIDTH // 2 - pad)
             self.bodies.append(
                 StaticRectangleBody(-1,
                                     CartesianPlane(self.window, (wall_width, wall_width), vec),
@@ -118,6 +122,7 @@ class SinglePlayerFootball(Game):
     #     if self.keys[core.K_f]:
     #         actions[idx] = KICK
     #     s, r, d = self.football.step(actions)
+    #     print(r)
     #     if d:
     #         self.reset()
 
