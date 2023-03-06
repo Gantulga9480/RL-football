@@ -326,7 +326,7 @@ cdef class Ball(FreePolygonBody):
         cdef double v_len = floor(self.velocity.mag() * 1000.0) / 1000.0
         cdef (double, double) xy
         cdef (double, double) _xy
-        if v_len > 1:
+        if v_len > 1 and self.is_free:
             if not self.is_attached:
                 xy = self.velocity.get_head()
                 _xy = self.velocity.unit_vector(1)
@@ -336,7 +336,8 @@ cdef class Ball(FreePolygonBody):
             if self.drag_coef:
                 self.velocity.add(-(v_len-1) * self.drag_coef)
         else:
-            self.velocity.set_head(self.velocity.unit_vector(1))
+            if self.is_free:
+                self.velocity.set_head(self.velocity.unit_vector(1))
         if (self.shape.plane.parent_vector.get_x() < self.shape.plane.parent_vector.plane.x_min) or \
             (self.shape.plane.parent_vector.get_x() > self.shape.plane.parent_vector.plane.x_max) or \
              (self.shape.plane.parent_vector.get_y() < self.shape.plane.parent_vector.plane.y_min) or \
@@ -347,7 +348,8 @@ cdef class Ball(FreePolygonBody):
 
     def reset(self, (double, double) pos):
         self.is_free = True
-        self.velocity.set_head((1, 0))
+        self.velocity.set_head_ref(point2d(1, 0))
+        self.shape.plane.parent_vector.set_head_ref(point2d(1, 0))
         self.shape.plane.parent_vector.set_head(pos)
 
     def show(self, vertex=False, velocity=False) -> None:
@@ -379,9 +381,12 @@ cdef class Player(DynamicPolygonBody):
         cdef double d
         if self.has_ball:
             power += 1
-            ball.velocity.set_head(self.velocity.unit_vector(power))
-            ball.shape.plane.parent_vector.set_head(ball.shape.plane.parent_vector.plane.to_xy(self.shape.plane.get_CENTER()))
             ball.is_free = True
+            ball.velocity.set_head_ref(point2d(1, 0))
+            ball.velocity.set_head(self.velocity.unit_vector(power))
+            ball.shape.plane.parent_vector.set_head_ref(point2d(1, 0))
+            ball.shape.plane.parent_vector.set_head(self.shape.plane.parent_vector.get_head())
+
             self.velocity.max = self.PLAYER_MAX_SPEED
             self.kicked = True
             self.has_ball = False

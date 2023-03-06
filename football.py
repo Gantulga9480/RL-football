@@ -14,9 +14,9 @@ TEAM_COLOR = [(0, 162, 232), (34, 177, 76)]
 
 PLAYER_ABILITY_POINT = 0.98
 
-BALL_SPEED_MAX = 10
+BALL_SPEED_MAX = 20
 BALL_SIZE = 20
-GOAL_AREA_WIDTH = 120
+GOAL_AREA_WIDTH = 200
 GOAL_AREA_HEIGHT = 400
 
 # Actions
@@ -37,8 +37,7 @@ class TeamLeft:
         self.score = 0
         self.players: list[Player] = []
         self.team_size = team_size
-        self.parent_plane = plane
-        self.plane = plane.createPlane(GOAL_AREA_WIDTH - plane.CENTER[0], 0)
+        self.plane = plane
         if goalkeeper:
             self.players.append(GoalKeeper(TEAM_LEFT * TEAM_ID_OFFSET, self.TEAM_ID, self.plane))
         for i in range(self.team_size):
@@ -47,10 +46,9 @@ class TeamLeft:
 
     def reset(self):
         self.score = 0
-        x_lim = self.plane.to_xy(self.parent_plane.CENTER)[0]
         y_lim = (self.plane.window_size[1] - GOAL_AREA_WIDTH) / 2
         for player in self.players:
-            x = np.random.randint(0, x_lim + 1)
+            x = np.random.randint(self.plane.x_min + GOAL_AREA_WIDTH, 0 + 1)
             y = np.random.randint(-y_lim, y_lim + 1)
             dr = np.random.random() * np.pi * 2
             player.reset((x, y), dr)
@@ -64,8 +62,7 @@ class TeamRight:
         self.score = 0
         self.players: list[Player] = []
         self.team_size = team_size
-        self.parent_plane = plane
-        self.plane = plane.createPlane(plane.CENTER[0] - GOAL_AREA_WIDTH, 0)
+        self.plane = plane
         if goalkeeper:
             self.players.append(GoalKeeper(TEAM_RIGHT * TEAM_ID_OFFSET, self.TEAM_ID, self.plane))
         for i in range(self.team_size):
@@ -74,10 +71,9 @@ class TeamRight:
 
     def reset(self):
         self.score = 0
-        x_lim = self.plane.to_xy(self.parent_plane.CENTER)[0]
         y_lim = (self.plane.window_size[1] - GOAL_AREA_WIDTH) / 2
         for player in self.players:
-            x = np.random.randint(x_lim, 0 + 1)
+            x = np.random.randint(0, self.plane.x_max - GOAL_AREA_WIDTH + 1)
             y = np.random.randint(-y_lim, y_lim + 1)
             dr = np.random.random() * np.pi * 2
             player.reset((x, y), dr)
@@ -161,8 +157,9 @@ class Football:
                     if player.kicked:
                         pass
                     else:
-                        self.ball.velocity.head = (1, 0)
                         self.ball.is_free = False
+                        self.ball.velocity.set_head_ref(player.velocity.get_head_ref())
+                        self.ball.shape.plane.get_parent_vector().set_head_ref(player.shape.plane.get_parent_vector().get_head_ref())
                         player.has_ball = True
                         player.velocity.max = player.PLAYER_SPEED_BALL
                         self.current_player = p_idx
@@ -213,8 +210,8 @@ class Football:
 
     def show(self):
         width = self.size[0] - GOAL_AREA_WIDTH * 2
-        height = self.size[1] - 60 * 2
-        core.draw.rect(self.window, (0, 0, 0), (GOAL_AREA_WIDTH, 60, width, height), 1)  # Touch line
+        height = self.size[1] - GOAL_AREA_WIDTH
+        core.draw.rect(self.window, (0, 0, 0), (GOAL_AREA_WIDTH, GOAL_AREA_WIDTH / 2, width, height), 1)  # Touch line
         core.draw.circle(self.plane.window,
                          (0, 0, 0),
                          (0 + GOAL_AREA_WIDTH, self.size[1] / 2), 200, 1)

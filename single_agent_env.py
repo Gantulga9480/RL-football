@@ -2,7 +2,7 @@ from Game import Game
 from Game import core
 from Game.graphic import CartesianPlane
 from Game.physics import StaticRectangleBody
-from football import Football, NOOP, BALL_SPEED_MAX
+from football import Football, NOOP, BALL_SPEED_MAX, STOP, GO_FORWARD, TURN_LEFT, TURN_RIGHT, KICK
 import numpy as np
 
 
@@ -15,23 +15,21 @@ class RLFootball(Football):
     def __init__(self, window, size, fps, team_size, full: bool = True) -> None:
         super().__init__(window, size, fps, team_size, full)
         self.counter = 0
+        self.done = False
 
     def step(self, actions: list = None):
         super().step(actions)
         self.counter += 1
-        if self.counter == (self.fps * 10):
+        if self.counter == (self.fps * 100):
             self.done = True
         ball_pos = self.plane.to_xy(self.ball.position())
         if self.ball.is_out or ball_pos[0] < -60:
             self.done = True
-        if self.done and self.teamRight.score == 0:
-            reward = -1
+        if self.teamRight.score:
+            self.done = True
+            reward = 0
         else:
-            if self.teamRight.score:
-                self.done = True
-                reward = 1
-            else:
-                reward = 0
+            reward = -1
         return self.get_state(), reward, self.done
 
     def get_state(self):
@@ -98,33 +96,54 @@ class SinglePlayerFootball(Game):
         self.fps = 30
         self.set_window()
         self.set_title(title)
-        self.env: RLFootball = None
+        self.football: RLFootball = None
         self.team_size = 1
         self.step_count = 0
         self.setup()
 
     def reset(self):
-        return self.env.reset()
+        return self.football.reset()
+
+    # def loop(self):
+    #     actions = [NOOP for _ in range(self.team_size)]  # +2 goal keeper agents
+    #     idx = self.football.current_player
+    #     if self.keys[core.K_UP]:
+    #         actions[idx] = GO_FORWARD
+    #     if self.keys[core.K_DOWN]:
+    #         actions[idx] = STOP
+    #     if self.keys[core.K_LEFT]:
+    #         actions[idx] = TURN_LEFT
+    #     if self.keys[core.K_RIGHT]:
+    #         actions[idx] = TURN_RIGHT
+    #     if self.keys[core.K_f]:
+    #         actions[idx] = KICK
+    #     s, r, d = self.football.step(actions)
+    #     if d:
+    #         self.reset()
 
     def step(self, action: int = NOOP):
         self.step_count += 1
-        return self.env.step([action])
+        return self.football.step([action])
 
     def setup(self):
-        self.env = RLFootball(self.window, self.size, self.fps, self.team_size, False)
+        self.football = RLFootball(self.window, self.size, self.fps, self.team_size, False)
 
     def loop_once(self):
         super().loop_once()
-        return self.env.done
+        return self.football.done
 
     def onEvent(self, event):
         if event.type == core.KEYUP:
             if event.key == core.K_q:
                 self.running = False
-                self.env.done = True
+                self.football.done = True
             if event.key == core.K_SPACE:
                 self.rendering = not self.rendering
 
     def onRender(self):
         self.window.fill((255, 255, 255))
-        self.env.show()
+        self.football.show()
+
+
+if __name__ == "__main__":
+    SinglePlayerFootball().loop_forever()

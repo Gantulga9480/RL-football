@@ -16,7 +16,6 @@ class Test(Game):
     def loop(self):
         actions = [NOOP for _ in range(self.team_size * 2 + 2)]  # +2 goal keeper agents
         idx = self.football.current_player
-        actions[idx] = NOOP
         if self.keys[core.K_UP]:
             actions[idx] = GO_FORWARD
         if self.keys[core.K_DOWN]:
@@ -28,6 +27,8 @@ class Test(Game):
         if self.keys[core.K_SPACE]:
             actions[idx] = KICK
         self.football.step(actions)
+        if self.football.ball.is_out:
+            self.football.ball.reset((0, 0))
 
     def onRender(self):
         self.window.fill((255, 255, 255))
