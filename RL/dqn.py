@@ -40,7 +40,6 @@ class DeepQNetworkAgent(DeepAgent):
 
     @torch.no_grad()
     def policy(self, state):
-        """E_greedy - True for training, False (default) for inference"""
         self.step_count += 1
         self.model.eval()
         state = torch.tensor(state, dtype=torch.float32).to(self.device)
