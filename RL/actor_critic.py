@@ -8,7 +8,6 @@ class ActorCriticAgent(DeepAgent):
     def __init__(self, state_space_size: int, action_space_size: int, device: str = 'cpu') -> None:
         super().__init__(state_space_size, action_space_size, device)
         self.log_probs = []
-        self.rewards = []
         self.values = []
         self.eps = np.finfo(np.float32).eps.item()
         self.loss_fn = torch.nn.HuberLoss()
@@ -22,12 +21,14 @@ class ActorCriticAgent(DeepAgent):
             self.values.append(value)
         return action
 
-    def learn(self, reward, episode_over):
+    def learn(self, state: np.ndarray, action: int, next_state: np.ndarray, reward: float, episode_over: bool):
         if self.train:
             self.rewards.append(reward)
             if episode_over:
                 self.episode_count += 1
+                self.reward_history.append(np.sum(self.rewards))
                 self.update_model()
+                print(f"Episode: {self.episode_count} | Train: {self.train_count} | r: {self.reward_history[-1]:.6f}")
 
     def update_model(self):
         self.train_count += 1
@@ -53,8 +54,6 @@ class ActorCriticAgent(DeepAgent):
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-
-        print(f"Episode: {self.episode_count} | Train: {self.train_count} | loss: {loss.item():.6f}")
 
         self.rewards = []
         self.log_probs = []

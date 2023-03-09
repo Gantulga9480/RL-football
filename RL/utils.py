@@ -26,10 +26,10 @@ class ReplayBufferBase(object):
 
 class ReplayBuffer(ReplayBufferBase):
 
-    def __init__(self, max_size, min_size, state_shape) -> None:
+    def __init__(self, max_size, min_size, state_space_shape) -> None:
         super().__init__(max_size, min_size)
-        self.state_buffer = np.zeros((max_size, state_shape), dtype=np.float32)
-        self.next_state_buffer = np.zeros((max_size, state_shape), dtype=np.float32)
+        self.state_buffer = np.zeros((max_size, state_space_shape), dtype=np.float32)
+        self.next_state_buffer = np.zeros((max_size, state_space_shape), dtype=np.float32)
         self.action_buffer = np.zeros((max_size, 1), dtype=np.int32)
         self.reward_buffer = np.zeros((max_size, 1), dtype=np.float32)
         self.done_buffer = np.zeros((max_size, 1), dtype=np.int32)
@@ -38,7 +38,7 @@ class ReplayBuffer(ReplayBufferBase):
 
     @property
     def trainable(self):
-        return self.buffer_idx + 1 >= self.min_size or self.is_full
+        return self.buffer_idx >= self.min_size or self.is_full
 
     def push(self, state, action, next_state, reward, episode_over):
         """Data format [state, action, next_state, reward, episode_over]"""

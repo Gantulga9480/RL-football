@@ -30,7 +30,7 @@ class RLFootball(Football):
             self.done = True
             reward = 1
         elif self.done and not self.teamRight.score:
-            reward = -1
+            reward = -0.01
         else:
             reward = -0.01
         return self.get_state(), reward, self.done
@@ -57,7 +57,10 @@ class RLFootball(Football):
     def reset(self):
         self.counter = 0
         self.done = False
-        self.ball.reset((300, 0))
+        y_lim = (self.plane.window_size[1] - GOAL_AREA_WIDTH) / 2
+        x = np.random.randint(0, self.plane.x_max - GOAL_AREA_WIDTH + 1)
+        y = np.random.randint(-y_lim, y_lim + 1)
+        self.ball.reset((x, y))
         self.teamRight.reset()
         return self.get_state()
 

@@ -13,7 +13,7 @@ class DeepQNetworkAgent(DeepAgent):
         self.batchs = 0
         self.target_update_freq = 0
         self.target_update_rate = 0
-        self.loss_fn = None
+        self.loss_fn = torch.nn.HuberLoss()
 
     def create_buffer(self, buffer: ReplayBufferBase):
         if buffer.min_size == 0:
@@ -30,7 +30,6 @@ class DeepQNetworkAgent(DeepAgent):
         self.batchs = batchs
         self.target_update_freq = target_update_freq
         self.target_update_rate = tau
-        self.loss_fn = torch.nn.MSELoss()
 
     def load_model(self, path) -> None:
         super().load_model(path)
@@ -39,7 +38,7 @@ class DeepQNetworkAgent(DeepAgent):
         self.target_model.eval()
 
     @torch.no_grad()
-    def policy(self, state):
+    def policy(self, state: np.ndarray):
         self.step_count += 1
         self.model.eval()
         state = torch.tensor(state, dtype=torch.float32).to(self.device)
@@ -55,36 +54,41 @@ class DeepQNetworkAgent(DeepAgent):
             else:
                 return torch.argmax(self.model(state), axis=1).tolist()
 
-    def learn(self, state, action, next_state, reward, episode_over, update: str = "hard"):
-        """update: ['hard', 'soft'] = 'hard'"""
-        if episode_over:
-            self.episode_count += 1
+    def learn(self, state: np.ndarray, action: int, next_state: np.ndarray, reward: float, episode_over: bool, update: str = "soft"):
+        """update: ['hard', 'soft'] = 'soft'"""
         batch = len(state.shape) > 1
         if not batch:
+            self.rewards.append(reward)
             self.buffer.push(state, action, next_state, reward, episode_over)
         else:
+            self.rewards.append(np.mean(reward))
             self.buffer.extend(state, action, next_state, reward, episode_over)
         if self.buffer.trainable and self.train:
             self.update_model()
             if update == "soft":
                 self.target_update_soft()
             elif update == "hard":
-                if self.train_count % self.target_update_freq == 0:
-                    self.target_update_hard()
+                self.target_update_hard()
             else:
-                raise ValueError(f"wrong target update mode -> {update}")
+                raise ValueError(f"Wrong target update mode -> {update}")
             self.decay_epsilon()
+        if episode_over:
+            self.episode_count += 1
+            self.reward_history.append(np.sum(self.rewards))
+            self.rewards = []
+            print(f"Episode: {self.episode_count} | Train: {self.train_count} | e: {self.e:.6f} | r: {self.reward_history[-1]:.6f}")
 
     def target_update_hard(self):
-        self.target_model.load_state_dict(self.model.state_dict())
+        if self.train_count % self.target_update_freq == 0:
+            self.target_model.load_state_dict(self.model.state_dict())
 
     def target_update_soft(self):
         for target_param, local_param in zip(self.target_model.parameters(), self.model.parameters()):
             target_param.data.copy_(self.target_update_rate * local_param.data + (1.0 - self.target_update_rate) * target_param.data)
 
     def update_model(self):
-        s, a, ns, r, d = self.buffer.sample(self.batchs)
         self.train_count += 1
+        s, a, ns, r, d = self.buffer.sample(self.batchs)
         self.model.eval()
         states = torch.tensor(s, dtype=torch.float32).to(self.device)
         next_states = torch.tensor(ns, dtype=torch.float32).to(self.device)
@@ -92,16 +96,11 @@ class DeepQNetworkAgent(DeepAgent):
             current_qs = self.model(states)
             future_qs = self.target_model(next_states)
             for i in range(len(s)):
-                if not d[i]:
-                    new_q = r[i] + self.y * torch.max(future_qs[i])
-                else:
-                    new_q = r[i]
-                current_qs[i][a[i]] = new_q.item()
+                current_qs[i][a[i]] = (r[i] + (1 - d[i]) * self.y * torch.max(future_qs[i])).item()
+
         self.model.train()
         preds = self.model(states)
         loss = self.loss_fn(preds, current_qs).to(self.device)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        if self.train_count % 100 == 0:
-            print(f"Episode: {self.episode_count} | Train: {self.train_count} | Loss: {loss.item():.6f} | e: {self.e:.6f}")
