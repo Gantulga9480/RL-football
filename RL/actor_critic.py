@@ -38,8 +38,7 @@ class ActorCriticAgent(DeepAgent):
             G.append(r_sum)
         G = torch.tensor(list(reversed(G)), dtype=torch.float32).to(self.device)
         G -= G.mean()
-        if len(G) > 1:
-            G /= (G.std() + self.eps)
+        G /= (G.std() + self.eps)
 
         V = torch.cat(self.values)
 
