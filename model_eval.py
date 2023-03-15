@@ -1,15 +1,15 @@
 import torch
 from single_agent_env import SinglePlayerFootball
-from RL import DeepQNetworkAgent
+from RL import DeepQNetworkAgent, ActorCriticAgent
 
 
 env = SinglePlayerFootball(title="Model evaluation")
-agent = DeepQNetworkAgent(None, None)
+agent = ActorCriticAgent(None, None)
 agent.train = False
 
-agent.model = torch.jit.load("best_models/random_ball_every_-1_goal_300_transfer_14705_299.pt", map_location="cpu")
+agent.model = torch.jit.load("best_models/ac_fixed_ball_normalized_160_0.95.pt", map_location="cpu")
 
 while env.running:
-    state = env.reset(ball_random=True)
+    state = env.reset()
     while not env.loop_once():
         state, reward, done = env.step(agent.policy(state))
