@@ -28,11 +28,11 @@ class RLFootball(Football):
             self.done = True
         if self.teamRight.score:
             self.done = True
-            reward = 300
+            reward = 1
         elif self.done and not self.teamRight.score:
-            reward = -1
+            reward = -1 / 300
         else:
-            reward = -1
+            reward = -1 / 300
         return self.get_state(), reward, self.done
 
     def get_state(self):

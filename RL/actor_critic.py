@@ -1,4 +1,5 @@
 import torch
+from torch.distributions import Categorical
 from .deep_agent import DeepAgent
 import numpy as np
 
@@ -15,11 +16,14 @@ class ActorCriticAgent(DeepAgent):
     def policy(self, state):
         self.step_count += 1
         state = torch.tensor(state, dtype=torch.float32).to(self.device)
-        action, log_prob, value = self.model(state)
+        probs, value = self.model(state)
+        distribution = Categorical(probs)
+        action = distribution.sample()
         if self.train:
+            log_prob = distribution.log_prob(action)
             self.log_probs.append(log_prob)
             self.values.append(value)
-        return action
+        return action.item()
 
     def learn(self, state: np.ndarray, action: int, next_state: np.ndarray, reward: float, episode_over: bool):
         if self.train:
@@ -39,14 +43,15 @@ class ActorCriticAgent(DeepAgent):
             G.append(r_sum)
         G = torch.tensor(list(reversed(G)), dtype=torch.float32).to(self.device)
         G -= G.mean()
-        G /= (G.std() + self.eps)
+        if (len(G) > 1):
+            G /= (G.std() + self.eps)
 
         V = torch.cat(self.values)
 
         with torch.no_grad():
             A = G - V
 
-        actor_loss = torch.stack([-log_prob * a for log_prob, a in zip(self.log_probs, A)]).sum()
+        actor_loss = torch.stack([-log_prob * a for log_prob, a in zip(self.log_probs, A)]).mean()
         critic_loss = self.loss_fn(V, G)
 
         loss = actor_loss + critic_loss

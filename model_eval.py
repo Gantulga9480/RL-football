@@ -7,7 +7,7 @@ env = SinglePlayerFootball(title="Model evaluation")
 agent = DeepQNetworkAgent(None, None)
 agent.train = False
 
-agent.model = torch.jit.load("random_ball/first/-0.01_every_to_1 iteration 2_31275_0.99.pt", map_location="cpu")
+agent.model = torch.jit.load("best_models/random_ball_every_-1_goal_300_transfer_14705_299.pt", map_location="cpu")
 
 while env.running:
     state = env.reset(ball_random=True)
