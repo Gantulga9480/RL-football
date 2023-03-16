@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 scores = []
 
-with open("rewards_initial.txt", 'r') as f:
+with open("rewards.txt", 'r') as f:
     data = f.readlines()
     scores = [float(item) for item in data]
 
