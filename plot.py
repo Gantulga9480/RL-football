@@ -1,9 +1,16 @@
 import matplotlib.pyplot as plt
-scores = []
+import argparse
 
-with open("rewards.txt", 'r') as f:
-    data = f.readlines()
-    scores = [float(item) for item in data]
+parser = argparse.ArgumentParser()
+parser.add_argument('-f', '--file', type=str, default='')
+args = parser.parse_args()
+scores = []
+if args.file:
+    with open(args.file, 'r') as f:
+        data = f.readlines()
+        scores = [float(item) for item in data]
+else:
+    quit()
 
 scores_sum_small = []
 scores_sum_big = []
