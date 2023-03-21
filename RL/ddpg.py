@@ -57,23 +57,23 @@ class DeepDeterministicPolicyGradientAgent(DeepAgent):
         self.actor.eval()
         state = torch.Tensor(state).to(self.device)
         action = self.actor(state).cpu().numpy()
-        if self.train:
+        if self.training:
             return (action + np.random.normal(0, self.noise_std)).clip(-1, 1)
         else:
             return action
 
-    def learn(self, state: np.ndarray, action, next_state: np.ndarray, reward, episode_over: bool):
-        self.rewards.append(reward)
+    def learn(self, state: np.ndarray, action: float, next_state: np.ndarray, reward: float, episode_over: bool):
         self.buffer.push(state, action, next_state, reward, episode_over)
-        if self.buffer.trainable and self.train:
+        if self.buffer.trainable:
+            self.rewards.append(reward)
             self.update_model()
             self.update_target()
-        if episode_over:
-            self.episode_count += 1
-            self.step_count = 0
-            self.reward_history.append(np.sum(self.rewards))
-            self.rewards.clear()
-            print(f"Episode: {self.episode_count} | Train: {self.train_count} | r: {self.reward_history[-1]:.6f}")
+            if episode_over:
+                self.step_count = 0
+                self.episode_count += 1
+                self.reward_history.append(np.sum(self.rewards))
+                self.rewards.clear()
+                print(f"Episode: {self.episode_count} | Train: {self.train_count} | r: {self.reward_history[-1]:.6f}")
 
     def update_target(self):
         for target_param, local_param in zip(self.target_actor.parameters(), self.actor.parameters()):
@@ -86,21 +86,25 @@ class DeepDeterministicPolicyGradientAgent(DeepAgent):
         self.train_count += 1
         s, a, ns, r, d = self.buffer.sample(self.batch)
         r /= self.reward_norm_factor
-        states = torch.tensor(s, dtype=torch.float32).to(self.device)
-        actions = torch.tensor(a, dtype=torch.float32).view(self.batch, 1).to(self.device)
-        next_states = torch.tensor(ns, dtype=torch.float32).to(self.device)
-        rewards = torch.tensor(r, dtype=torch.float32).view(self.batch, 1).to(self.device)
-        dones = torch.tensor(d, dtype=torch.float32).view(self.batch, 1).to(self.device)
+        states = torch.tensor(s).float().to(self.device)
+        actions = torch.tensor(a).float().view(self.batch, self.action_space_size).to(self.device)
+        next_states = torch.tensor(ns).float().to(self.device)
+        rewards = torch.tensor(r).float().view(self.batch, 1).to(self.device)
+        dones = torch.tensor(d).float().view(self.batch, 1).to(self.device)
         with torch.no_grad():
             y = rewards + (1 - dones) * self.y * self.target_critic(next_states, self.target_actor(next_states))
+
+        self.actor.train()
         preds = self.critic(states, actions)
         critic_loss = self.loss_fn(preds, y)
+
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
         self.critic_optimizer.step()
 
         p_actions = self.actor(states)
         actor_loss = -self.critic(states, p_actions).mean()
+
         self.actor_optimizer.zero_grad()
         actor_loss.backward()
         self.actor_optimizer.step()

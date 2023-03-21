@@ -54,12 +54,12 @@ class RLFootball(Football):
                  has_ball]
         return np.array(state)
 
-    def reset(self, ball_random=False):
+    def reset(self, random_ball=False):
         self.counter = 0
         self.done = False
         x = 300
         y = 0
-        if ball_random:
+        if random_ball:
             y_lim = (self.plane.window_size[1] - GOAL_AREA_WIDTH) / 2
             x = np.random.randint(0, self.plane.x_max - GOAL_AREA_WIDTH + 1)
             y = np.random.randint(-y_lim, y_lim + 1)
@@ -111,8 +111,8 @@ class SinglePlayerFootball(Game):
         self.step_count = 0
         self.setup()
 
-    def reset(self, ball_random=False):
-        return self.football.reset(ball_random=ball_random)
+    def reset(self, random_ball=False):
+        return self.football.reset(random_ball=random_ball)
 
     # def loop(self):
     #     actions = [NOOP for _ in range(self.team_size)]  # +2 goal keeper agents
