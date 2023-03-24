@@ -19,7 +19,7 @@ env = SinglePlayerFootball(title="Model evaluation")
 agent = DeepQNetworkAgent(None, None)
 agent.train = False
 
-base = r"models/random_ball"
+base = r"best_models"
 paths = []
 for root, dirs, files in os.walk(base):
     for file in files:
@@ -36,7 +36,7 @@ for path in paths:
     env.set_title(path)
     for _ in range(args.ne):
         rewards = []
-        state = env.reset(ball_random=args.rb)
+        state = env.reset(random_ball=args.rb)
         while not env.loop_once():
             state, reward, done = env.step(agent.policy(state))
             rewards.append(reward)
