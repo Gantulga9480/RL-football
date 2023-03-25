@@ -4,22 +4,24 @@ import torch
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-from single_agent_env import SinglePlayerFootball
+from single_agent_env import SinglePlayerFootball, STATE_SPACE_SIZE, ACTION_SPACE_SIZE
 from RL import DeepQNetworkAgent, ActorCriticAgent
 import argparse
 parser = argparse.ArgumentParser()
+parser.add_argument("model_dir", type=str, help="Directory containing model pt file")
 parser.add_argument("--rb", action="store_true", help="random ball")
 parser.add_argument("--ne", type=int, default=1000, help="Number of episodes")
 args = parser.parse_args()
 
 font = {'size': 18}
 matplotlib.rc('font', **font)
+plt.style.use('ggplot')
 
 env = SinglePlayerFootball(title="Model evaluation")
-agent = DeepQNetworkAgent(None, None)
-agent.train = False
+agent = DeepQNetworkAgent(STATE_SPACE_SIZE, ACTION_SPACE_SIZE)
+agent.training = False
 
-base = r"best_models"
+base = args.model_dir
 paths = []
 for root, dirs, files in os.walk(base):
     for file in files:
@@ -58,7 +60,7 @@ if len(sim_scores) > 1:
     ax.set_xticks([])
 else:
     plt.title("Model performance over 1000 episodes")
-    ax.set_xlabel("Epoch")
+    ax.set_xlabel("Episode")
     ax.set_ylabel("Reward")
-    ax.plot(ep_rewards)
+    ax.plot(ep_rewards, c='r')
 plt.show()

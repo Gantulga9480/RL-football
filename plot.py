@@ -5,6 +5,8 @@ import argparse
 
 font = {'weight': 'normal', 'size': 18}
 matplotlib.rc('font', **font)
+plt.style.use('ggplot')
+# matplotlib.rcParams['font.sans-serif'] = ["DejaVu Sans Mono", 'DejaVu Sans', 'Lucida Grande', 'Verdana']
 
 parser = argparse.ArgumentParser()
 parser.add_argument('rewards', nargs='+')
@@ -26,7 +28,7 @@ if not args.average:
             with open(file, 'r') as f:
                 lines = f.readlines()
                 rewards_list.append(np.array([float(item.strip()) for item in lines]))
-                file_names.append(file.split(".")[0])
+                file_names.append(file.split(".")[0].split('\\')[-1])
         except IsADirectoryError:
             continue
 
@@ -36,8 +38,9 @@ if not args.average:
 
     fig1, ax1 = plt.subplots()
     for i, r in enumerate(avgs):
+        # ax1.plot(rewards_list[i], alpha=0.2, c='r', linewidth="2")
         ax1.plot(r, label=file_names[i], linewidth="5")
-    plt.title("Training result")
+    plt.title("Training curve")
     ax1.legend()
     ax1.set_xlabel("Episode")
     ax1.set_ylabel("Reward")

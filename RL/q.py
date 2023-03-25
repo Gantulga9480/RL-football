@@ -14,7 +14,12 @@ class QLearningAgent(Agent):
         self.lr = lr
         self.y = y
         self.e_decay = e_decay
-        self.model = np.zeros((*self.state_space_size, self.action_space_size))
+        if isinstance(self.state_space_size, tuple):
+            self.model = np.zeros((*self.state_space_size, self.action_space_size))
+        elif isinstance(self.state_space_size, int):
+            self.model = np.zeros((self.state_space_size, self.action_space_size))
+        else:
+            self.model = np.zeros((self.state_space_size, self.action_space_size))
 
     def save_model(self, path) -> None:
         np.save(path, self.model)
@@ -41,7 +46,7 @@ class QLearningAgent(Agent):
 
     def policy(self, state):
         self.step_count += 1
-        if self.train and np.random.random() < self.e:
+        if self.training and np.random.random() < self.e:
             return np.random.choice(self.action_space_size)
         return np.argmax(self.model[state])
 
