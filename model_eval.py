@@ -18,22 +18,28 @@ matplotlib.rc('font', **font)
 plt.style.use('ggplot')
 
 env = SinglePlayerFootball(title="Model evaluation")
-agent = DeepQNetworkAgent(STATE_SPACE_SIZE, ACTION_SPACE_SIZE)
+agent = ActorCriticAgent(STATE_SPACE_SIZE, ACTION_SPACE_SIZE)
 agent.training = False
 
-base = args.model_dir
 paths = []
-for root, dirs, files in os.walk(base):
-    for file in files:
-        if file.endswith(".pt"):
-            if platform.system() == "Linux":
-                paths.append(f"{root}/{file}")
-            else:
-                paths.append(f"{root}\\{file}")
-paths.sort()
+base: str = args.model_dir
+if base.endswith(".pt"):
+    paths.append(base)
+else:
+    for root, dirs, files in os.walk(base):
+        for file in files:
+            if file.endswith(".pt"):
+                if platform.system() == "Linux":
+                    paths.append(f"{root}/{file}")
+                else:
+                    paths.append(f"{root}\\{file}")
+    paths.sort()
 sim_scores = []
 for path in paths:
-    agent.model = torch.jit.load(path, map_location="cpu")
+    if isinstance(agent, DeepQNetworkAgent):
+        agent.model = torch.jit.load(path, map_location="cpu")
+    else:
+        agent.actor = torch.jit.load(path, map_location="cpu")
     ep_rewards = []
     env.set_title(path)
     for _ in range(args.ne):
