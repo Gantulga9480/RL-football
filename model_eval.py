@@ -8,7 +8,8 @@ from single_agent_env import SinglePlayerFootball, STATE_SPACE_SIZE, ACTION_SPAC
 from RL import DeepQNetworkAgent, ActorCriticAgent
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("model_dir", type=str, help="Directory containing model pt file")
+parser.add_argument("--file", nargs='+', type=str, help="pt file")
+parser.add_argument("--dir", type=str, help="Directory containing model pt file")
 parser.add_argument("--rb", action="store_true", help="random ball")
 parser.add_argument("--ne", type=int, default=1000, help="Number of episodes")
 args = parser.parse_args()
@@ -22,11 +23,8 @@ agent = ActorCriticAgent(STATE_SPACE_SIZE, ACTION_SPACE_SIZE)
 agent.training = False
 
 paths = []
-base: str = args.model_dir
-if base.endswith(".pt"):
-    paths.append(base)
-else:
-    for root, dirs, files in os.walk(base):
+if args.dir:
+    for root, dirs, files in os.walk(args.dir):
         for file in files:
             if file.endswith(".pt"):
                 if platform.system() == "Linux":
@@ -34,6 +32,10 @@ else:
                 else:
                     paths.append(f"{root}\\{file}")
     paths.sort()
+if args.file:
+    for file in args.file:
+        if file.endswith(".pt"):
+            paths.append(file)
 sim_scores = []
 for path in paths:
     if isinstance(agent, DeepQNetworkAgent):

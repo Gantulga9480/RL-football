@@ -1,4 +1,4 @@
-name = "RI_fixed_ball_normalized_scratch"
+name = ""
 
 with open("file.txt", 'r') as f:
     lines = f.readlines()
