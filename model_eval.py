@@ -4,22 +4,26 @@ import torch
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-from single_agent_env import SinglePlayerFootball, STATE_SPACE_SIZE, ACTION_SPACE_SIZE
+from single_agent_envs import SinglePlayerFootballParallel, STATE_SPACE_SIZE, ACTION_SPACE_SIZE
 from RL import DeepQNetworkAgent, ActorCriticAgent
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--file", nargs='+', type=str, help="pt file")
 parser.add_argument("--dir", type=str, help="Directory containing model pt file")
-parser.add_argument("--rb", action="store_true", help="random ball")
 parser.add_argument("--ne", type=int, default=1000, help="Number of episodes")
+parser.add_argument("--rb", action="store_true", help="random ball")
+parser.add_argument("--ac", action="store_true", help="Actor critic model")
 args = parser.parse_args()
 
 font = {'size': 18}
 matplotlib.rc('font', **font)
 plt.style.use('ggplot')
 
-env = SinglePlayerFootball(title="Model evaluation")
-agent = ActorCriticAgent(STATE_SPACE_SIZE, ACTION_SPACE_SIZE)
+env = SinglePlayerFootballParallel(title="Model evaluation", env_count=2)
+if args.ac:
+    agent = ActorCriticAgent(STATE_SPACE_SIZE, ACTION_SPACE_SIZE)
+else:
+    agent = DeepQNetworkAgent(STATE_SPACE_SIZE, ACTION_SPACE_SIZE)
 agent.training = False
 
 paths = []
@@ -47,8 +51,10 @@ for path in paths:
     for _ in range(args.ne):
         rewards = []
         state = env.reset(random_ball=args.rb)
-        while not env.loop_once():
+        done = False
+        while not done:
             state, reward, done = env.step(agent.policy(state))
+            done = any(done)
             rewards.append(reward)
         ep_rewards.append(np.sum(rewards))
         if not env.running:

@@ -108,32 +108,12 @@ class SinglePlayerFootball(Game):
         self.set_title(title)
         self.football: RLFootball = None
         self.team_size = 1
-        self.step_count = 0
         self.setup()
 
     def reset(self, random_ball=False):
         return self.football.reset(random_ball=random_ball)
 
-    # def loop(self):
-    #     actions = [NOOP for _ in range(self.team_size)]  # +2 goal keeper agents
-    #     idx = self.football.current_player
-    #     if self.keys[core.K_UP]:
-    #         actions[idx] = GO_FORWARD
-    #     if self.keys[core.K_DOWN]:
-    #         actions[idx] = STOP
-    #     if self.keys[core.K_LEFT]:
-    #         actions[idx] = TURN_LEFT
-    #     if self.keys[core.K_RIGHT]:
-    #         actions[idx] = TURN_RIGHT
-    #     if self.keys[core.K_f]:
-    #         actions[idx] = KICK
-    #     s, r, d = self.football.step(actions)
-    #     print(r)
-    #     if d:
-    #         self.reset()
-
     def step(self, action: int = NOOP):
-        self.step_count += 1
         return self.football.step([action])
 
     def setup(self):
@@ -156,5 +136,46 @@ class SinglePlayerFootball(Game):
         self.football.show()
 
 
-if __name__ == "__main__":
-    SinglePlayerFootball().loop_forever()
+class SinglePlayerFootballParallel(Game):
+
+    def __init__(self, env_count: int = 1, title: str = 'Single Agent train') -> None:
+        super().__init__()
+        self.size = (1920, 1080)
+        self.fps = 30
+        self.set_window()
+        self.set_title(title)
+        self.env_count = env_count
+        self.envs: list[RLFootball] = []
+        self.team_size = 1
+        self.setup()
+
+    def setup(self):
+        for _ in range(self.env_count):
+            self.envs.append(RLFootball(self.window, self.size, self.fps, self.team_size, False))
+
+    def reset(self, random_ball=False):
+        states = np.zeros((self.env_count, STATE_SPACE_SIZE))
+        for i in range(self.env_count):
+            states[i] = self.envs[i].reset(random_ball=random_ball)
+        return states
+
+    def step(self, actions: np.ndarray):
+        next_states = np.zeros((self.env_count, STATE_SPACE_SIZE))
+        rewards = np.zeros(self.env_count)
+        dones = np.zeros(self.env_count)
+        for i in range(self.env_count):
+            next_states[i], rewards[i], dones[i] = self.envs[i].step([actions[i]])
+        self.loop_once()
+        return next_states, rewards, dones
+
+    def onEvent(self, event):
+        if event.type == core.KEYUP:
+            if event.key == core.K_q:
+                self.running = False
+            if event.key == core.K_SPACE:
+                self.rendering = not self.rendering
+
+    def onRender(self):
+        self.window.fill((255, 255, 255))
+        for i in range(self.env_count):
+            self.envs[i].show()
