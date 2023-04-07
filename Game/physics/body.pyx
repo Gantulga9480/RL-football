@@ -26,8 +26,8 @@ cdef class Body:
         self.id = id
         self.type = type
 
-    def show(self, vertex=False, velocity=False):
-        self.shape.show(vertex)
+    def show(self, vertex=False, velocity=False, width=1):
+        self.shape.show(vertex, width)
         if velocity:
             self.velocity.show((255, 0, 0))
 
@@ -132,7 +132,7 @@ cdef class FreeBody(Body):
                                                          self.shape.plane.parent_vector.get_y() + xy[1] - _xy[1]))
             # Drag is applied even if it's attached to another body
             if self.drag_coef:
-                self.velocity.add(-(v_len-1) * self.drag_coef)
+                self.velocity.add((1-v_len) * self.drag_coef)
         else:
             self.velocity.set_head(self.velocity.unit_vector(1))
 
@@ -189,7 +189,7 @@ cdef class DynamicBody(Body):
                                                          self.shape.plane.parent_vector.get_y() + xy[1] - _xy[1]))
             # Drag is applied even if it's attached to another body
             if self.drag_coef:
-                self.velocity.add(-(v_len-1) * self.drag_coef)
+                self.velocity.add((1-v_len) * self.drag_coef)
         else:
             self.velocity.set_head(self.velocity.unit_vector(1))
 
@@ -229,10 +229,10 @@ cdef class Ray(FreeBody):
     cpdef void scale(self, double factor):
         (<Vector2d>self.vertices[0]).scale(factor)
 
-    def show(self, vertex=False, velocity=False):
-        self.shape.show()
+    def show(self, vertex=False, velocity=False, width=1):
+        self.shape.show(False, width)
         if self.x != 0 or self.y != 0:
-            circle(self.shape.window, (255, 0, 0), self.shape.plane.to_XY((self.x, self.y)), 3)
+            circle(self.shape.plane.window, (255, 0, 0), self.shape.plane.to_XY((self.x, self.y)), 3)
         self.x = 0
         self.y = 0
 
@@ -334,7 +334,7 @@ cdef class Ball(FreePolygonBody):
                                                          self.shape.plane.parent_vector.get_y() + xy[1] - _xy[1]))
             # Drag is applied even if it's attached to another body
             if self.drag_coef:
-                self.velocity.add(-(v_len-1) * self.drag_coef)
+                self.velocity.add((1-v_len) * self.drag_coef)
         else:
             if self.is_free:
                 self.velocity.set_head(self.velocity.unit_vector(1))
@@ -352,9 +352,9 @@ cdef class Ball(FreePolygonBody):
         self.shape.plane.parent_vector.set_head_ref(point2d(1, 0))
         self.shape.plane.parent_vector.set_head(pos)
 
-    def show(self, vertex=False, velocity=False) -> None:
+    def show(self, vertex=False, velocity=False, width=1):
         circle(self.shape.plane.window, (255, 0, 0), self.velocity.get_TAIL(), self.radius)
-        super().show(vertex, velocity)
+        super().show(vertex, velocity, width)
 
 @cython.optimize.unpack_method_calls(False)
 cdef class Player(DynamicPolygonBody):
@@ -376,6 +376,9 @@ cdef class Player(DynamicPolygonBody):
         self.kicked = False
         self.has_ball = False
         self.ability_point = ability_point
+        self.mark = StaticPolygonBody(0, plane.createPlane(0, 0), (20, 7, 7))
+        self.mark.shape.color = (255, 0, 0)
+        self.attach(self.mark, True)
 
     def kick(self, FreePolygonBody ball, double power):
         cdef double d
@@ -401,12 +404,30 @@ cdef class Player(DynamicPolygonBody):
         self.kicked = False
         self.has_ball = False
 
-    def show(self, color=(150, 150, 150), vertex=False, velocity=False):
-        circle(self.shape.plane.window, color, self.velocity.get_TAIL(), self.radius)
-        super().show(vertex, velocity)
+    def show(self, color=(150, 150, 150), vertex=False, velocity=False, width=1):
+        circle(self.shape.plane.window, color, self.velocity.get_TAIL(), self.radius - 5)
+        super().show(vertex, velocity, width)
+        self.mark.show(False, False, 0)
         if self.has_ball:
             circle(self.shape.plane.window, (255, 0, 0), self.velocity.get_TAIL(), 10)
             circle(self.shape.plane.window, (0, 0, 0), self.velocity.get_TAIL(), 10, 2)
+
+    cdef void USR_step(self):
+        cdef double v_len = floor(self.velocity.mag() * 1000.0) / 1000.0
+        cdef (double, double) xy
+        cdef (double, double) _xy
+        if v_len > 1:
+            if not self.is_attached:
+                xy = self.velocity.get_head()
+                _xy = self.velocity.unit_vector(1)
+                self.shape.plane.parent_vector.set_head((self.shape.plane.parent_vector.get_x() + xy[0] - _xy[0],
+                                                         self.shape.plane.parent_vector.get_y() + xy[1] - _xy[1]))
+            # Drag is applied even if it's attached to another body
+            if self.drag_coef:
+                self.velocity.add((1-v_len) * self.drag_coef)
+        else:
+            self.velocity.set_head(self.velocity.unit_vector(1))
+        self.mark.step()
 
     cdef void USR_resolve_collision(self, Body o, (double, double) dxy):
         if o.type == DYNAMIC:
@@ -451,7 +472,10 @@ cdef class GoalKeeper(DynamicPolygonBody):
         self.kicked = False
         self.has_ball = False
         self.ability_point = ability_point
-        self.shape.plane.parent_vector.max = 200
+        # self.shape.plane.parent_vector.max = 200
+        self.mark = StaticPolygonBody(0, plane.createPlane(0, 0), (20, 7, 7))
+        self.mark.shape.color = (255, 0, 0)
+        self.attach(self.mark, True)
 
     def kick(self, FreePolygonBody ball, double power):
         cdef double d
@@ -477,12 +501,30 @@ cdef class GoalKeeper(DynamicPolygonBody):
         self.kicked = False
         self.has_ball = False
 
-    def show(self, color=(150, 150, 150), vertex=False, velocity=False):
-        circle(self.shape.plane.window, color, self.velocity.get_TAIL(), self.radius)
-        super().show(vertex, velocity)
+    def show(self, color=(150, 150, 150), vertex=False, velocity=False, width=1):
+        circle(self.shape.plane.window, color, self.velocity.get_TAIL(), self.radius - 5)
+        super().show(vertex, velocity, width)
+        self.mark.show(False, False, 0)
         if self.has_ball:
             circle(self.shape.plane.window, (255, 0, 0), self.velocity.get_TAIL(), 10)
             circle(self.shape.plane.window, (0, 0, 0), self.velocity.get_TAIL(), 10, 2)
+
+    cdef void USR_step(self):
+        cdef double v_len = floor(self.velocity.mag() * 1000.0) / 1000.0
+        cdef (double, double) xy
+        cdef (double, double) _xy
+        if v_len > 1:
+            if not self.is_attached:
+                xy = self.velocity.get_head()
+                _xy = self.velocity.unit_vector(1)
+                self.shape.plane.parent_vector.set_head((self.shape.plane.parent_vector.get_x() + xy[0] - _xy[0],
+                                                         self.shape.plane.parent_vector.get_y() + xy[1] - _xy[1]))
+            # Drag is applied even if it's attached to another body
+            if self.drag_coef:
+                self.velocity.add((1-v_len) * self.drag_coef)
+        else:
+            self.velocity.set_head(self.velocity.unit_vector(1))
+        self.mark.step()
 
     cdef void USR_resolve_collision(self, Body o, (double, double) dxy):
         if o.type == DYNAMIC:

@@ -154,8 +154,14 @@ cdef class vector2d:
             if self.max:
                 if _len <= self.max:
                     self.head.x.set_value(o)
+                else:
+                    o = self.dir()
+                    self.head.x.set_value(cos(o) * self.max)
             else:
                 self.head.x.set_value(o)
+        else:
+            o = self.dir()
+            self.head.x.set_value(cos(o) * self.min)
 
     @property
     def y(self):
@@ -168,8 +174,14 @@ cdef class vector2d:
             if self.max:
                 if _len <= self.max:
                     self.head.y.set_value(o)
+                else:
+                    o = self.dir()
+                    self.head.y.set_value(sin(o) * self.max)
             else:
                 self.head.y.set_value(o)
+        else:
+            o = self.dir()
+            self.head.y.set_value(sin(o) * self.min)
 
     @property
     def head(self):
@@ -183,9 +195,17 @@ cdef class vector2d:
                 if _len <= self.max:
                     self.head.x.set_value(o[0])
                     self.head.y.set_value(o[1])
+                else:
+                    o[0] = self.dir()
+                    self.head.x.set_value(cos(o[0]) * self.max)
+                    self.head.y.set_value(sin(o[0]) * self.max)
             else:
                 self.head.x.set_value(o[0])
                 self.head.y.set_value(o[1])
+        else:
+            o[0] = self.dir()
+            self.head.x.set_value(cos(o[0]) * self.min)
+            self.head.y.set_value(sin(o[0]) * self.min)
 
     def unit(self, double scale=1, bint vector=True):
         cdef double a = self.dir()
@@ -211,9 +231,7 @@ cdef class vector2d:
         raise NotImplementedError
 
     cpdef void set_head_ref(self, point2d o):
-        cdef double x = o.x.num
-        cdef double y = o.y.num
-        cdef double _len = sqrt(x*x + y*y)
+        cdef double _len = sqrt(o.x.num*o.x.num + o.y.num*o.y.num)
         if _len >= self.min:
             if self.max:
                 if _len <= self.max:
@@ -232,7 +250,6 @@ cdef class vector2d:
 
     cpdef void add(self, double o):
         cdef double a
-        cdef (double, double) xy
         if o > 0:
             if self.max:
                 if (self.mag() + o) <= self.max:
@@ -240,9 +257,9 @@ cdef class vector2d:
                     self.head.x.add(o * cos(a))
                     self.head.y.add(o * sin(a))
                 else:
-                    xy = self.unit_vector(self.max)
-                    self.head.x.num = xy[0]
-                    self.head.y.num = xy[1]
+                    a = self.dir()
+                    self.head.x.num = cos(a) * self.max
+                    self.head.y.num = sin(a) * self.max
             else:
                 a = self.dir()
                 self.head.x.add(o * cos(a))
@@ -253,12 +270,11 @@ cdef class vector2d:
                 self.head.x.add(o * cos(a))
                 self.head.y.add(o * sin(a))
             else:
-                xy = self.unit_vector(self.min)
-                self.head.x.num = xy[0]
-                self.head.y.num = xy[1]
+                a = self.dir()
+                self.head.x.num = cos(a) * self.min
+                self.head.y.num = sin(a) * self.min
 
     cpdef void scale(self, double o):
-        cdef (double, double) xy
         cdef double v_len = self.mag()
         if o > 1:
             if self.max:
@@ -266,9 +282,9 @@ cdef class vector2d:
                     self.head.x.scale(o)
                     self.head.y.scale(o)
                 else:
-                    xy = self.unit_vector(self.max)
-                    self.head.x.num = xy[0]
-                    self.head.y.num = xy[1]
+                    o = self.dir()
+                    self.head.x.num = cos(o) * self.max
+                    self.head.y.num = sin(o) * self.max
             else:
                 self.head.x.scale(o)
                 self.head.y.scale(o)
@@ -277,9 +293,9 @@ cdef class vector2d:
                 self.head.x.scale(o)
                 self.head.y.scale(o)
             else:
-                xy = self.unit_vector(self.min)
-                self.head.x.num = xy[0]
-                self.head.y.num = xy[1]
+                o = self.dir()
+                self.head.x.num = cos(o) * self.min
+                self.head.y.num = sin(o) * self.min
 
     cpdef void rotate(self, double radians):
         cdef double x = self.head.x.num
@@ -314,8 +330,14 @@ cdef class vector2d:
             if self.max:
                 if _len <= self.max:
                     self.head.x.set_value(o)
+                else:
+                    o = self.dir()
+                    self.head.x.set_value(cos(o) * self.max)
             else:
                 self.head.x.set_value(o)
+        else:
+            o = self.dir()
+            self.head.x.set_value(cos(o) * self.min)
 
     cdef void set_y(self, double o):
         cdef double _len = sqrt(o * o + self.head.x.num * self.head.x.num)
@@ -323,8 +345,14 @@ cdef class vector2d:
             if self.max:
                 if _len <= self.max:
                     self.head.y.set_value(o)
+                else:
+                    o = self.dir()
+                    self.head.y.set_value(sin(o) * self.max)
             else:
                 self.head.y.set_value(o)
+        else:
+            o = self.dir()
+            self.head.y.set_value(sin(o) * self.min)
 
     cdef void set_head(self, (double, double) o):
         cdef double _len = sqrt(o[0]*o[0] + o[1]*o[1])
@@ -333,9 +361,17 @@ cdef class vector2d:
                 if _len <= self.max:
                     self.head.x.set_value(o[0])
                     self.head.y.set_value(o[1])
+                else:
+                    o[0] = self.dir()
+                    self.head.x.set_value(cos(o[0]) * self.max)
+                    self.head.y.set_value(sin(o[0]) * self.max)
             else:
                 self.head.x.set_value(o[0])
                 self.head.y.set_value(o[1])
+        else:
+            o[0] = self.dir()
+            self.head.x.set_value(cos(o[0]) * self.min)
+            self.head.y.set_value(sin(o[0]) * self.min)
 
     cdef double get_x(self):
         return self.head.x.num

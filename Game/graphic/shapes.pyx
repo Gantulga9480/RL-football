@@ -3,7 +3,7 @@ from Game.graphic.cartesian cimport CartesianPlane, Vector2d
 from Game.math.core cimport pi
 from libc.math cimport sqrt, atan2
 import numpy as np
-from pygame.draw import aalines, aaline
+from pygame.draw import aalines, aaline, polygon, line
 
 @cython.optimize.unpack_method_calls(False)
 cdef class Shape:
@@ -48,7 +48,7 @@ cdef class Shape:
     @cython.boundscheck(False)
     @cython.nonecheck(False)
     @cython.initializedcheck(False)
-    def show(self, show_vertex=False):
+    def show(self, show_vertex=False, width=1):
         cdef int i
         cdef list heads = []
         if show_vertex:
@@ -58,7 +58,12 @@ cdef class Shape:
         else:
             for i in range(self.vertex_count):
                 heads.append((<Vector2d>self.vertices[i]).get_HEAD())
-        aalines(self.plane.window, self.color, True, heads)
+        if width == 1:
+            aalines(self.plane.window, self.color, True, heads)
+        elif width > 1:
+            polygon(self.plane.window, self.color, heads, width)
+        else:
+            polygon(self.plane.window, self.color, heads)
 
 @cython.optimize.unpack_method_calls(False)
 cdef class Line(Shape):
@@ -90,9 +95,12 @@ cdef class Line(Shape):
     @cython.boundscheck(False)
     @cython.nonecheck(False)
     @cython.initializedcheck(False)
-    def show(self, show_vertex=False):
+    def show(self, show_vertex=False, width=1):
         (<Vector2d>self.vertices[0]).update()
-        aaline(self.plane.window, self.color, self.plane.center.get_xy(), (<Vector2d>self.vertices[0]).headXY.get_xy())
+        if width == 1:
+            aaline(self.plane.window, self.color, self.plane.center.get_xy(), (<Vector2d>self.vertices[0]).headXY.get_xy())
+        else:
+            line(self.plane.window, self.color, self.plane.center.get_xy(), (<Vector2d>self.vertices[0]).headXY.get_xy())
 
 @cython.optimize.unpack_method_calls(False)
 cdef class Rectangle(Shape):
