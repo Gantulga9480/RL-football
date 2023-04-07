@@ -1,11 +1,11 @@
 from Game.graphic import CartesianPlane
-from Game.physics import (Player, Ball, Body,
+from Game.physics import (Player, Ball, Body, Ray,
                           StaticRectangleBody,
                           GoalKeeper)
 from Game.physics import EnginePolygon
 from Game import core
 import numpy as np
-
+from math import dist
 
 TEAM_LEFT = 0
 TEAM_RIGHT = 1
@@ -16,6 +16,8 @@ PLAYER_ABILITY_POINT = 0.98
 
 BALL_SPEED_MAX = 20
 BALL_SIZE = 20
+RAY_LENGTH = 100
+RAY_COUNT = 9
 GOAL_AREA_WIDTH = 400
 GOAL_AREA_HEIGHT = 400
 
@@ -29,6 +31,37 @@ TURN_RIGHT = 5
 ACTIONS = [NOOP, STOP, KICK, GO_FORWARD, TURN_LEFT, TURN_RIGHT]
 
 
+class Sensor:
+
+    def __init__(self,
+                 id: int,
+                 plane: CartesianPlane,
+                 ray_count: int,
+                 radius: float,
+                 direction: float = 0) -> None:
+        self.rays: list[Ray] = []
+        direction = direction / 180 * np.pi
+        for i in range(ray_count):
+            r = Ray(id, plane.createPlane(), radius)
+            r.shape.color = (230, 230, 230)
+            r.shape.vertices[0].rotate(direction + 2 * np.pi / ray_count * i)
+            self.rays.append(r)
+
+    def get_state(self):
+        s = []
+        for ray in self.rays:
+            d = dist([ray.x, ray.y], [0, 0])
+            if d == 0:
+                s.append(1)
+            else:
+                s.append(d / ray.radius)
+        return s
+
+    def reset(self):
+        for ray in self.rays:
+            ray.reset()
+
+
 class TeamLeft:
 
     TEAM_ID = TEAM_LEFT
@@ -36,13 +69,23 @@ class TeamLeft:
     def __init__(self, team_size: int, plane: CartesianPlane, goalkeeper: bool = True) -> None:
         self.score = 0
         self.players: list[Player] = []
+        self.sensors: list[Sensor] = []
         self.team_size = team_size
         self.plane = plane
         if goalkeeper:
-            self.players.append(GoalKeeper(TEAM_LEFT * TEAM_ID_OFFSET, self.TEAM_ID, self.plane))
+            p = GoalKeeper(TEAM_LEFT * TEAM_ID_OFFSET, self.TEAM_ID, self.plane)
+            s = Sensor(TEAM_LEFT * TEAM_ID_OFFSET, self.plane, RAY_COUNT, RAY_LENGTH, p.direction())
+            for r in s.rays:
+                p.attach(r, True)
+            self.players.append(p)
+            self.sensors.append(s)
         for i in range(self.team_size):
-            self.players.append(
-                Player(TEAM_LEFT * TEAM_ID_OFFSET + i + 1, self.TEAM_ID, self.plane, ability_point=PLAYER_ABILITY_POINT))
+            p = Player(TEAM_LEFT * TEAM_ID_OFFSET + i + 1, self.TEAM_ID, self.plane, ability_point=PLAYER_ABILITY_POINT)
+            s = Sensor(TEAM_LEFT * TEAM_ID_OFFSET + i + 1, self.plane, RAY_COUNT, RAY_LENGTH, p.direction())
+            for r in s.rays:
+                p.attach(r, True)
+            self.players.append(p)
+            self.sensors.append(s)
 
     def reset(self):
         self.score = 0
@@ -61,13 +104,23 @@ class TeamRight:
     def __init__(self, team_size: int, plane: CartesianPlane, goalkeeper: bool = True) -> None:
         self.score = 0
         self.players: list[Player] = []
+        self.sensors: list[Sensor] = []
         self.team_size = team_size
         self.plane = plane
         if goalkeeper:
-            self.players.append(GoalKeeper(TEAM_RIGHT * TEAM_ID_OFFSET, self.TEAM_ID, self.plane))
+            p = GoalKeeper(TEAM_RIGHT * TEAM_ID_OFFSET, self.TEAM_ID, self.plane)
+            s = Sensor(TEAM_RIGHT * TEAM_ID_OFFSET, self.plane, RAY_COUNT, RAY_LENGTH, p.direction())
+            for r in s.rays:
+                p.attach(r, True)
+            self.players.append(p)
+            self.sensors.append(s)
         for i in range(self.team_size):
-            self.players.append(
-                Player(TEAM_RIGHT * TEAM_ID_OFFSET + i + 1, self.TEAM_ID, self.plane, ability_point=PLAYER_ABILITY_POINT))
+            p = Player(TEAM_RIGHT * TEAM_ID_OFFSET + i + 1, self.TEAM_ID, self.plane, ability_point=PLAYER_ABILITY_POINT)
+            s = Sensor(TEAM_RIGHT * TEAM_ID_OFFSET + i + 1, self.plane, RAY_COUNT, RAY_LENGTH, p.direction())
+            for r in s.rays:
+                p.attach(r, True)
+            self.players.append(p)
+            self.sensors.append(s)
 
     def reset(self):
         self.score = 0
@@ -88,6 +141,7 @@ class Football:
         self.team_size = team_size
 
         self.players: list[Player] = []
+        self.sensors: list[Sensor] = []
         self.ball: Ball = None
         self.current_player = 0
         self.last_player = None
@@ -98,13 +152,17 @@ class Football:
         self.teamRight = TeamRight(self.team_size, self.plane, goalkeeper=full)
         self.teamLeft = TeamLeft(self.team_size, self.plane, goalkeeper=full)
 
-        for player in self.teamRight.players:
-            self.players.append(player)
-            self.bodies.append(player)
+        self.players.extend(self.teamRight.players)
+        self.bodies.extend(self.teamRight.players)
+        self.sensors.extend(self.teamRight.sensors)
+        for sensor in self.teamRight.sensors:
+            self.bodies.extend(sensor.rays)
         if full:
-            for player in self.teamLeft.players:
-                self.players.append(player)
-                self.bodies.append(player)
+            self.players.extend(self.teamLeft.players)
+            self.bodies.extend(self.teamLeft.players)
+            self.sensors.extend(self.teamLeft.sensors)
+            for sensor in self.teamLeft.sensors:
+                self.bodies.extend(sensor.rays)
 
         self.engine = EnginePolygon(self.plane, np.array(self.bodies, dtype=Body))
 
@@ -120,7 +178,7 @@ class Football:
                 if action == GO_FORWARD:
                     self.players[i].accelerate(10)
                 elif action == STOP:
-                    self.players[i].accelerate(-1)
+                    self.players[i].accelerate(-10)
                 elif action == TURN_LEFT:
                     self.players[i].rotate(self.players[i].PLAYER_MAX_TURN_RATE / (speed + 1))
                 elif action == TURN_RIGHT:
