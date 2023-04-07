@@ -19,7 +19,7 @@ font = {'size': 18}
 matplotlib.rc('font', **font)
 plt.style.use('ggplot')
 
-env = SinglePlayerFootballParallel(title="Model evaluation", env_count=2)
+env = SinglePlayerFootballParallel(title="Model evaluation", env_count=1)
 if args.ac:
     agent = ActorCriticAgent(STATE_SPACE_SIZE, ACTION_SPACE_SIZE)
 else:

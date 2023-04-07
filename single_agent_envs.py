@@ -2,12 +2,12 @@ from Game import Game
 from Game import core
 from Game.graphic import CartesianPlane
 from Game.physics import StaticRectangleBody
-from football import Football, NOOP, BALL_SPEED_MAX, STOP, GO_FORWARD, TURN_LEFT, TURN_RIGHT, KICK, GOAL_AREA_WIDTH
+from football import Football, NOOP, BALL_SPEED_MAX, STOP, GO_FORWARD, TURN_LEFT, TURN_RIGHT, KICK, GOAL_AREA_WIDTH, RAY_COUNT
 import numpy as np
 
 
 ACTION_SPACE_SIZE = 6
-STATE_SPACE_SIZE = 9
+STATE_SPACE_SIZE = 9 + RAY_COUNT
 
 
 class RLFootball(Football):
@@ -36,22 +36,24 @@ class RLFootball(Football):
         return self.get_state(), reward, self.done
 
     def get_state(self):
+        state = []
+        state.extend(self.sensors[0].get_state())
         ball_pos = self.plane.to_xy(self.ball.position())
         ball_dir = self.ball.direction() / 360
         ball_spd = self.ball.speed() / BALL_SPEED_MAX
         player_pos = self.plane.to_xy(self.players[0].position())
-        player_dir = self.teamRight.players[0].direction() / 360
+        player_dir = self.players[0].direction() / 360
         player_spd = self.players[0].speed() / self.players[0].PLAYER_MAX_SPEED
         has_ball = self.players[0].has_ball
-        state = [ball_pos[0] / self.plane.x_max,
-                 ball_pos[1] / self.plane.y_max,
-                 ball_dir,
-                 ball_spd,
-                 player_pos[0] / self.plane.x_max,
-                 player_pos[1] / self.plane.y_max,
-                 player_dir,
-                 player_spd,
-                 has_ball]
+        state.extend([ball_pos[0] / self.plane.x_max,
+                      ball_pos[1] / self.plane.y_max,
+                      ball_dir,
+                      ball_spd,
+                      player_pos[0] / self.plane.x_max,
+                      player_pos[1] / self.plane.y_max,
+                      player_dir,
+                      player_spd,
+                      has_ball])
         return np.array(state)
 
     def reset(self, random_ball=False):
@@ -65,6 +67,9 @@ class RLFootball(Football):
             y = np.random.randint(-y_lim, y_lim + 1)
         self.ball.reset((x, y))
         self.teamRight.reset()
+        self.engine.step()
+        self.ball.step()
+        self.check_ball()
         return self.get_state()
 
     def create_wall(self, wall_width=120, wall_height=5):
@@ -103,12 +108,15 @@ class SinglePlayerFootball(Game):
     def __init__(self, title: str = 'Single Agent train') -> None:
         super().__init__()
         self.size = (1920, 1080)
-        self.fps = 30
+        self.fps = 120
         self.set_window()
         self.set_title(title)
         self.football: RLFootball = None
-        self.team_size = 1
+        self.team_size = 3
         self.setup()
+
+    def setup(self):
+        self.football = RLFootball(self.window, self.size, self.fps, self.team_size, False)
 
     def reset(self, random_ball=False):
         return self.football.reset(random_ball=random_ball)
@@ -116,8 +124,22 @@ class SinglePlayerFootball(Game):
     def step(self, action: int = NOOP):
         return self.football.step([action])
 
-    def setup(self):
-        self.football = RLFootball(self.window, self.size, self.fps, self.team_size, False)
+    def loop(self):
+        actions = [NOOP for _ in range(self.team_size)]  # +2 goal keeper agents
+        idx = self.football.current_player
+        if self.keys[core.K_UP]:
+            actions[idx] = GO_FORWARD
+        if self.keys[core.K_DOWN]:
+            actions[idx] = STOP
+        if self.keys[core.K_LEFT]:
+            actions[idx] = TURN_LEFT
+        if self.keys[core.K_RIGHT]:
+            actions[idx] = TURN_RIGHT
+        if self.keys[core.K_f]:
+            actions[idx] = KICK
+        s, r, d = self.football.step(actions)
+        if d:
+            self.reset()
 
     def loop_once(self):
         super().loop_once()
@@ -172,6 +194,8 @@ class SinglePlayerFootballParallel(Game):
         if event.type == core.KEYUP:
             if event.key == core.K_q:
                 self.running = False
+                for env in self.envs:
+                    env.done = True
             if event.key == core.K_SPACE:
                 self.rendering = not self.rendering
 
