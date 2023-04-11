@@ -83,7 +83,8 @@ class Game:
             if self.sprites.__len__() > 0:
                 pg.display.update(self.sprites)
             pg.display.flip()
-            self.clock.tick(self.fps)
+            if self.fps > 0:
+                self.clock.tick(self.fps)
 
     def onRender(self):
         """ User should override this method """

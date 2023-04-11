@@ -17,7 +17,7 @@ PLAYER_ABILITY_POINT = 0.98
 BALL_SPEED_MAX = 20
 BALL_SIZE = 20
 RAY_LENGTH = 100
-RAY_COUNT = 9
+RAY_COUNT = 5
 GOAL_AREA_WIDTH = 400
 GOAL_AREA_HEIGHT = 400
 
@@ -44,7 +44,7 @@ class Sensor:
         for i in range(ray_count):
             r = Ray(id, plane.createPlane(), radius)
             r.shape.color = (230, 230, 230)
-            r.shape.vertices[0].rotate(direction + 2 * np.pi / ray_count * i)
+            r.shape.vertices[0].rotate(direction - np.pi / 2 + np.pi / 4 * i)
             self.rays.append(r)
 
     def get_state(self):
@@ -293,24 +293,24 @@ class Football:
                 body.show(TEAM_COLOR[body.team_id])
             else:
                 body.show()
-        p1 = self.players[self.current_player]
-        p1_plane = p1.shape.plane
-        unit = p1.velocity.unit(100, vector=False)
-        vv1 = p1_plane.createVector(unit[0], unit[1])
-        vv2 = p1_plane.createVector(unit[0], unit[1])
-        vv1.rotate(p1.PLAYER_MAX_FOV / 360 * np.pi)
-        vv2.rotate(-p1.PLAYER_MAX_FOV / 360 * np.pi)
-        vv1.show()
-        vv2.show()
-        for player in self.players:
-            if player != p1:
-                pos = player.shape.plane.CENTER
-                pos = p1_plane.to_xy(pos)
-                v = p1_plane.createVector(pos[0], pos[1])
-                dot = p1.velocity.mag() * v.mag()
-                if dot > 0:
-                    ab = np.arccos(p1.velocity.dot(v) / dot) / np.pi * 180
-                    if ab < player.PLAYER_MAX_FOV / 2:
-                        v.show()
         if self.ball.is_free:
             self.ball.show()
+        # p1 = self.players[self.current_player]
+        # p1_plane = p1.shape.plane
+        # unit = p1.velocity.unit(100, vector=False)
+        # vv1 = p1_plane.createVector(unit[0], unit[1])
+        # vv2 = p1_plane.createVector(unit[0], unit[1])
+        # vv1.rotate(p1.PLAYER_MAX_FOV / 360 * np.pi)
+        # vv2.rotate(-p1.PLAYER_MAX_FOV / 360 * np.pi)
+        # vv1.show()
+        # vv2.show()
+        # for player in self.players:
+        #     if player != p1:
+        #         pos = player.shape.plane.CENTER
+        #         pos = p1_plane.to_xy(pos)
+        #         v = p1_plane.createVector(pos[0], pos[1])
+        #         dot = p1.velocity.mag() * v.mag()
+        #         if dot > 0:
+        #             ab = np.arccos(p1.velocity.dot(v) / dot) / np.pi * 180
+        #             if ab < player.PLAYER_MAX_FOV / 2:
+        #                 v.show()

@@ -124,22 +124,22 @@ class SinglePlayerFootball(Game):
     def step(self, action: int = NOOP):
         return self.football.step([action])
 
-    def loop(self):
-        actions = [NOOP for _ in range(self.team_size)]  # +2 goal keeper agents
-        idx = self.football.current_player
-        if self.keys[core.K_UP]:
-            actions[idx] = GO_FORWARD
-        if self.keys[core.K_DOWN]:
-            actions[idx] = STOP
-        if self.keys[core.K_LEFT]:
-            actions[idx] = TURN_LEFT
-        if self.keys[core.K_RIGHT]:
-            actions[idx] = TURN_RIGHT
-        if self.keys[core.K_f]:
-            actions[idx] = KICK
-        s, r, d = self.football.step(actions)
-        if d:
-            self.reset()
+    # def loop(self):
+    #     actions = [NOOP for _ in range(self.team_size)]  # +2 goal keeper agents
+    #     idx = self.football.current_player
+    #     if self.keys[core.K_UP]:
+    #         actions[idx] = GO_FORWARD
+    #     if self.keys[core.K_DOWN]:
+    #         actions[idx] = STOP
+    #     if self.keys[core.K_LEFT]:
+    #         actions[idx] = TURN_LEFT
+    #     if self.keys[core.K_RIGHT]:
+    #         actions[idx] = TURN_RIGHT
+    #     if self.keys[core.K_f]:
+    #         actions[idx] = KICK
+    #     s, r, d = self.football.step(actions)
+    #     if d:
+    #         self.reset()
 
     def loop_once(self):
         super().loop_once()
@@ -160,25 +160,27 @@ class SinglePlayerFootball(Game):
 
 class SinglePlayerFootballParallel(Game):
 
-    def __init__(self, env_count: int = 1, title: str = 'Single Agent train') -> None:
+    def __init__(self, env_count: int = 1, title: str = 'Single Agent train', random_ball: bool = False) -> None:
         super().__init__()
         self.size = (1920, 1080)
-        self.fps = 30
+        self.fps = 0
         self.set_window()
         self.set_title(title)
         self.env_count = env_count
+        self.random_ball = random_ball
         self.envs: list[RLFootball] = []
         self.team_size = 1
         self.setup()
 
     def setup(self):
         for _ in range(self.env_count):
-            self.envs.append(RLFootball(self.window, self.size, self.fps, self.team_size, False))
+            self.envs.append(RLFootball(self.window, self.size, 30, self.team_size, False))
+            self.envs[-1].reset(self.random_ball)
 
-    def reset(self, random_ball=False):
+    def reset(self):
         states = np.zeros((self.env_count, STATE_SPACE_SIZE))
         for i in range(self.env_count):
-            states[i] = self.envs[i].reset(random_ball=random_ball)
+            states[i] = self.envs[i].reset(random_ball=self.random_ball)
         return states
 
     def step(self, actions: np.ndarray):
