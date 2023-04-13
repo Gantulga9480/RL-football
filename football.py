@@ -186,10 +186,7 @@ class Football:
 
         self.engine = EnginePolygon(self.plane, np.array(self.bodies, dtype=Body))
 
-        self.ball = Ball(0, self.plane.createPlane(0, 0), (BALL_SIZE,) * 10, drag_coef=0.005)
-
-        self.teamRight.reset()
-        self.teamLeft.reset()
+        self.ball = Ball(0, self.plane, (BALL_SIZE,) * 10, drag_coef=0.005)
 
     def step(self, actions: list = None):
         if actions:
@@ -243,14 +240,14 @@ class Football:
                         player.velocity.max = player.PLAYER_SPEED_BALL
                         self.current_player = p_idx
             if self.ball.is_free:
-                pos = self.plane.to_xy(self.ball.position())
+                pos = self.ball.position()
             else:
                 if not tmp:
                     for i, p in enumerate(self.players):
                         if p.has_ball:
                             self.current_player = i
                             break
-                pos = self.plane.to_xy(self.players[self.current_player].shape.plane.CENTER)
+                pos = self.players[self.current_player].position()
             if (pos[0] < self.plane.x_min + GOAL_AREA_WIDTH) and (-GOAL_AREA_HEIGHT / 2 < pos[1] < GOAL_AREA_HEIGHT / 2):
                 self.teamLeft.score += 1
                 self.players[self.current_player].has_ball = False

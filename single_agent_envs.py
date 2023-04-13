@@ -22,7 +22,7 @@ class RLFootball(Football):
         self.counter += 1
         if self.counter == (self.fps * 10):
             self.done = True
-        ball_pos = self.plane.to_xy(self.ball.position())
+        ball_pos = self.ball.position()
         if self.ball.is_out or ball_pos[0] < 0 or ball_pos[0] > self.size[0] // 2 - GOAL_AREA_WIDTH \
                 or ball_pos[1] < -self.size[1] // 2 + GOAL_AREA_WIDTH // 2 or ball_pos[1] > self.size[1] // 2 - GOAL_AREA_WIDTH // 2:
             self.done = True
@@ -38,10 +38,10 @@ class RLFootball(Football):
     def get_state(self):
         state = []
         state.extend(self.sensors[0].get_state())
-        ball_pos = self.plane.to_xy(self.ball.position())
+        ball_pos = self.ball.position()
         ball_dir = self.ball.direction() / 360
         ball_spd = self.ball.speed() / BALL_SPEED_MAX
-        player_pos = self.plane.to_xy(self.players[0].position())
+        player_pos = self.players[0].position()
         player_dir = self.players[0].direction() / 360
         player_spd = self.players[0].speed() / self.players[0].PLAYER_MAX_SPEED
         has_ball = self.players[0].has_ball
@@ -112,7 +112,7 @@ class SinglePlayerFootball(Game):
         self.set_window()
         self.set_title(title)
         self.football: RLFootball = None
-        self.team_size = 3
+        self.team_size = 1
         self.setup()
 
     def setup(self):
