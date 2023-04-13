@@ -79,13 +79,15 @@ class OneStepActorCriticAgent(DeepAgent):
 
         # Bug? It doesn't seem to need to compute computational graph when forwarding next_state.
         # But skipping that part with torch.no_grad() breaks learning. Weird!
+
         # Next state value
-        # with torch.no_grad():
         V_ = (1.0 - done) * self.critic(next_state)
-        # Expected return from current state
-        G = reward + self.gamma * V_.detach()
+
         # Current state value
         V = self.critic(state)
+
+        # Expected return from current state
+        G = reward + self.gamma * V_.detach()
 
         # TD error/Advantage
         A = G.detach() - (1.0 - done) * V.detach()
