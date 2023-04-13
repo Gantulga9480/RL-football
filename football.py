@@ -14,7 +14,7 @@ TEAM_COLOR = [(0, 162, 232), (34, 177, 76)]
 
 PLAYER_ABILITY_POINT = 0.98
 
-BALL_SPEED_MAX = 20
+BALL_SPEED_MAX = 500
 BALL_SIZE = 20
 RAY_LENGTH = 100
 RAY_COUNT = 5
@@ -90,9 +90,19 @@ class TeamLeft:
     def reset(self):
         self.score = 0
         y_lim = (self.plane.window_size[1] - GOAL_AREA_WIDTH) / 2
+        saved_pos = []
         for player in self.players:
-            x = np.random.randint(self.plane.x_min + GOAL_AREA_WIDTH, 0 + 1)
-            y = np.random.randint(-y_lim, y_lim + 1)
+            while True:
+                x = np.random.randint(self.plane.x_min + GOAL_AREA_WIDTH, 0 + 1)
+                y = np.random.randint(-y_lim, y_lim + 1)
+                d = False
+                for pos in saved_pos:
+                    d = dist(pos, (x, y)) < player.PLAYER_SIZE * 2
+                    if d:
+                        break
+                if not d:
+                    saved_pos.append((x, y))
+                    break
             dr = np.random.random() * np.pi * 2
             player.reset((x, y), dr)
 
@@ -125,9 +135,19 @@ class TeamRight:
     def reset(self):
         self.score = 0
         y_lim = (self.plane.window_size[1] - GOAL_AREA_WIDTH) / 2
+        saved_pos = []
         for player in self.players:
-            x = np.random.randint(0, self.plane.x_max - GOAL_AREA_WIDTH + 1)
-            y = np.random.randint(-y_lim, y_lim + 1)
+            while True:
+                x = np.random.randint(0, self.plane.x_max - GOAL_AREA_WIDTH + 1)
+                y = np.random.randint(-y_lim, y_lim + 1)
+                d = False
+                for pos in saved_pos:
+                    d = dist(pos, (x, y)) < player.PLAYER_SIZE * 2
+                    if d:
+                        break
+                if not d:
+                    saved_pos.append((x, y))
+                    break
             dr = np.random.random() * np.pi * 2
             player.reset((x, y), dr)
 
@@ -166,7 +186,7 @@ class Football:
 
         self.engine = EnginePolygon(self.plane, np.array(self.bodies, dtype=Body))
 
-        self.ball = Ball(0, self.plane.createPlane(0, 0), (BALL_SIZE,) * 10, drag_coef=0.01)
+        self.ball = Ball(0, self.plane.createPlane(0, 0), (BALL_SIZE,) * 10, drag_coef=0.005)
 
         self.teamRight.reset()
         self.teamLeft.reset()
@@ -174,11 +194,12 @@ class Football:
     def step(self, actions: list = None):
         if actions:
             for i, action in enumerate(actions):
-                speed = self.players[i].speed() / 10
+                speed = self.players[i].speed()
+                speed /= 150
                 if action == GO_FORWARD:
-                    self.players[i].accelerate(10)
+                    self.players[i].accelerate(500)
                 elif action == STOP:
-                    self.players[i].accelerate(-10)
+                    self.players[i].accelerate(-500)
                 elif action == TURN_LEFT:
                     self.players[i].rotate(self.players[i].PLAYER_MAX_TURN_RATE / (speed + 1))
                 elif action == TURN_RIGHT:

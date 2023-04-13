@@ -108,7 +108,7 @@ class SinglePlayerFootball(Game):
     def __init__(self, title: str = 'Single Agent train') -> None:
         super().__init__()
         self.size = (1920, 1080)
-        self.fps = 120
+        self.fps = 30
         self.set_window()
         self.set_title(title)
         self.football: RLFootball = None
@@ -124,22 +124,22 @@ class SinglePlayerFootball(Game):
     def step(self, action: int = NOOP):
         return self.football.step([action])
 
-    # def loop(self):
-    #     actions = [NOOP for _ in range(self.team_size)]  # +2 goal keeper agents
-    #     idx = self.football.current_player
-    #     if self.keys[core.K_UP]:
-    #         actions[idx] = GO_FORWARD
-    #     if self.keys[core.K_DOWN]:
-    #         actions[idx] = STOP
-    #     if self.keys[core.K_LEFT]:
-    #         actions[idx] = TURN_LEFT
-    #     if self.keys[core.K_RIGHT]:
-    #         actions[idx] = TURN_RIGHT
-    #     if self.keys[core.K_f]:
-    #         actions[idx] = KICK
-    #     s, r, d = self.football.step(actions)
-    #     if d:
-    #         self.reset()
+    def loop(self):
+        actions = [NOOP for _ in range(self.team_size)]  # +2 goal keeper agents
+        idx = self.football.current_player
+        if self.keys[core.K_UP]:
+            actions[idx] = GO_FORWARD
+        if self.keys[core.K_DOWN]:
+            actions[idx] = STOP
+        if self.keys[core.K_LEFT]:
+            actions[idx] = TURN_LEFT
+        if self.keys[core.K_RIGHT]:
+            actions[idx] = TURN_RIGHT
+        if self.keys[core.K_f]:
+            actions[idx] = KICK
+        s, r, d = self.football.step(actions)
+        if d:
+            self.reset()
 
     def loop_once(self):
         super().loop_once()
