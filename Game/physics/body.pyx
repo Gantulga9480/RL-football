@@ -27,6 +27,7 @@ cdef class Body:
         self.type = type
 
     def show(self, vertex=False, velocity=False, width=1):
+        # circle(self.shape.plane.window, (0, 0, 0), self.velocity.plane.center.get_xy(), self.radius, 1)
         self.shape.show(vertex, width)
         if velocity:
             self.velocity.show((255, 0, 0))
@@ -53,6 +54,7 @@ cdef class Body:
                 self.velocity.rotate(d)
         else:
             self.USR_step()
+        self.shape.update()
 
     cdef void USR_step(self):
         pass
@@ -93,7 +95,7 @@ cdef class Body:
                 self.radius *= factor
 
     cpdef (double, double) position(self):
-        return self.shape.plane.get_CENTER()
+        return self.shape.plane.parent_vector.get_head()
 
     @cython.cdivision(True)
     cpdef double direction(self):
@@ -318,7 +320,7 @@ cdef class Ball(FreePolygonBody):
                  tuple size,
                  double max_speed=0,
                  double drag_coef=0):
-        super().__init__(id, plane, size, max_speed, drag_coef)
+        super().__init__(id, plane.createPlane(0, 0), size, max_speed, drag_coef)
         self.is_free = True
         self.is_out = False
 
@@ -354,8 +356,8 @@ cdef class Ball(FreePolygonBody):
         self.shape.plane.parent_vector.set_head(pos)
 
     def show(self, vertex=False, velocity=False, width=1):
-        circle(self.shape.plane.window, (255, 0, 0), self.velocity.get_TAIL(), self.radius)
-        super().show(vertex, velocity, width)
+        self.shape.color = (255, 0, 0)
+        super().show(vertex, velocity, 0)
 
 @cython.optimize.unpack_method_calls(False)
 cdef class Player(DynamicPolygonBody):
@@ -406,12 +408,11 @@ cdef class Player(DynamicPolygonBody):
         self.has_ball = False
 
     def show(self, color=(150, 150, 150), vertex=False, velocity=False, width=1):
-        circle(self.shape.plane.window, color, self.velocity.get_TAIL(), self.radius - 5)
-        super().show(vertex, velocity, width)
+        self.shape.color = color
+        super().show(vertex, velocity, 0)
         self.mark.show(False, False, 0)
         if self.has_ball:
-            circle(self.shape.plane.window, (255, 0, 0), self.velocity.get_TAIL(), 10)
-            circle(self.shape.plane.window, (0, 0, 0), self.velocity.get_TAIL(), 10, 2)
+            circle(self.shape.plane.window, (255, 0, 0), self.velocity.plane.center.get_xy(), 20)
 
     @cython.cdivision(True)
     cdef void USR_step(self):
@@ -458,7 +459,7 @@ cdef class Player(DynamicPolygonBody):
 cdef class GoalKeeper(DynamicPolygonBody):
 
     def __cinit__(self, *args, **kwargs):
-        self.PLAYER_SIZE = 30
+        self.PLAYER_SIZE = 40
         self.PLAYER_MAX_SPEED = 300
         self.PLAYER_SPEED_BALL = 300
         self.PLAYER_MAX_TURN_RATE = 10
@@ -504,12 +505,11 @@ cdef class GoalKeeper(DynamicPolygonBody):
         self.has_ball = False
 
     def show(self, color=(150, 150, 150), vertex=False, velocity=False, width=1):
-        circle(self.shape.plane.window, color, self.velocity.get_TAIL(), self.radius - 5)
-        super().show(vertex, velocity, width)
+        self.shape.color = color
+        super().show(vertex, velocity, 0)
         self.mark.show(False, False, 0)
         if self.has_ball:
-            circle(self.shape.plane.window, (255, 0, 0), self.velocity.get_TAIL(), 10)
-            circle(self.shape.plane.window, (0, 0, 0), self.velocity.get_TAIL(), 10, 2)
+            circle(self.shape.plane.window, (255, 0, 0), self.velocity.plane.center.get_xy(), 20)
 
     @cython.cdivision(True)
     cdef void USR_step(self):

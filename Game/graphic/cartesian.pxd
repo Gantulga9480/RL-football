@@ -27,7 +27,6 @@ cdef class Vector2d(vector2d):
     cdef readonly CartesianPlane plane
     cdef point2d headXY
 
-    cpdef double dist(self, Vector2d vector)
     cpdef void random(self)
     cpdef void update(self)
     cdef double get_X(self)

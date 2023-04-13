@@ -10,6 +10,7 @@ cdef class Shape:
 
     cpdef void rotate(self, double angle)
     cpdef void scale(self, double factor)
+    cdef void update(self)
 
 cdef class Line(Shape):
     pass

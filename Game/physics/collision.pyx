@@ -38,16 +38,16 @@ cdef class collision:
                     b2 = body1
             dx = 0
             dy = 0
-            l1s = self.plane.to_xy(b1.shape.plane.get_CENTER())
+            l1s = self.plane.to_xy(b1.shape.plane.center.get_xy())
             for i in range(b1.shape.vertex_count):
                 # check for every vertex of first shape against ...
-                l1e = self.plane.to_xy((<Vector2d>b1.shape.vertices[i]).get_HEAD())
-                l2s = self.plane.to_xy((<Vector2d>b2.shape.vertices[0]).get_HEAD())
+                l1e = self.plane.to_xy((<Vector2d>b1.shape.vertices[i]).headXY.get_xy())
+                l2s = self.plane.to_xy((<Vector2d>b2.shape.vertices[0]).headXY.get_xy())
                 for j in range(b2.shape.vertex_count):
                     # ... every edge of second shape
                     if j > 0:
                         l2s = l2e
-                    l2e = self.plane.to_xy((<Vector2d>b2.shape.vertices[(j+1)%b2.shape.vertex_count]).get_HEAD())
+                    l2e = self.plane.to_xy((<Vector2d>b2.shape.vertices[(j+1)%b2.shape.vertex_count]).headXY.get_xy())
                     # check these two line segments are intersecting or not
                     val = line_segment_intersect(l1s[0], l1s[1], l1e[0], l1e[1], l2s[0], l2s[1], l2e[0], l2e[1])
                     if val != 0:

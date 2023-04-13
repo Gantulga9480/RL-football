@@ -57,13 +57,17 @@ cdef class Shape:
                 heads.append((<Vector2d>self.vertices[i]).headXY.get_xy())
         else:
             for i in range(self.vertex_count):
-                heads.append((<Vector2d>self.vertices[i]).get_HEAD())
+                heads.append((<Vector2d>self.vertices[i]).headXY.get_xy())
         if width == 1:
             aalines(self.plane.window, self.color, True, heads)
         elif width > 1:
             polygon(self.plane.window, self.color, heads, width)
         else:
             polygon(self.plane.window, self.color, heads)
+
+    cdef void update(self):
+        for i in range(self.vertex_count):
+            (<Vector2d>self.vertices[i]).update()
 
 @cython.optimize.unpack_method_calls(False)
 cdef class Line(Shape):
@@ -96,7 +100,6 @@ cdef class Line(Shape):
     @cython.nonecheck(False)
     @cython.initializedcheck(False)
     def show(self, show_vertex=False, width=1):
-        (<Vector2d>self.vertices[0]).update()
         if width == 1:
             aaline(self.plane.window, self.color, self.plane.center.get_xy(), (<Vector2d>self.vertices[0]).headXY.get_xy())
         else:

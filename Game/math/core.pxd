@@ -38,7 +38,7 @@ cdef class vector2d:
     cpdef void rotate(self, double radians)
     cpdef double mag(self)
     cpdef double dir(self)
-    cpdef double distance_to(self, vector2d vector)
+    cpdef double dist(self, vector2d vector)
     cpdef double angle_between(self, vector2d vector)
     cpdef double dot(self, vector2d vector)
     cdef void set_x(self, double o)

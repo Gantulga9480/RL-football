@@ -309,7 +309,7 @@ cdef class vector2d:
     cpdef double dir(self):
         return atan2(self.head.y.num, self.head.x.num)
 
-    cpdef double distance_to(self, vector2d vector):
+    cpdef double dist(self, vector2d vector):
         cdef double dx = self.head.x.num - vector.head.x.num
         cdef double dy = self.head.y.num - vector.head.y.num
         return sqrt(dx*dx + dy*dy)

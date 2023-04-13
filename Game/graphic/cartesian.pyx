@@ -59,8 +59,6 @@ cdef class CartesianPlane:
 
     @cython.optimize.unpack_method_calls(False)
     def show(self):
-        if self.parent_vector:
-            self.parent_vector.update()
         # draw x axis
         line(self.window, (255, 0, 0), self.center.get_xy(),
              (self.center.x.num, self.center.y.num-10), 2)
@@ -141,9 +139,9 @@ cdef class Vector2d(vector2d):
         ...
 
     def __init__(self, CartesianPlane plane, double x=1, double y=0, double max=0, double min=0):
+        super().__init__(x, y, max, min)
         self.plane = plane
         self.headXY = point2d(0, 0)
-        super().__init__(x, y, max, min)
         self.update()
 
     def __repr__(self):
@@ -172,7 +170,6 @@ cdef class Vector2d(vector2d):
     @cython.nonecheck(False)
     @cython.optimize.unpack_method_calls(False)
     def show(self, color=(0, 0, 0)):
-        self.update()
         aaline(self.plane.window, color, self.plane.center.get_xy(), self.headXY.get_xy())
 
     def unit(self, double scale=1, bint vector=True):
@@ -186,13 +183,6 @@ cdef class Vector2d(vector2d):
         if vector:
             return Vector2d(self.plane, xy[0], xy[1], self.max, self.min)
         return xy
-
-    cpdef double dist(self, Vector2d vector):
-        self.update()
-        vector.update()
-        cdef double dx = self.headXY.x.num - vector.headXY.x.num
-        cdef double dy = self.headXY.y.num - vector.headXY.y.num
-        return sqrt(dx*dx + dy*dy)
 
     cpdef void random(self):
         # TODO Fix null vector creation

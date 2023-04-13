@@ -17,12 +17,15 @@ class Body:
     def position(self) -> tuple:
         """
         @return
-        (x, y) Coordinate in screen space. Use plane.to_xy to convert to Cartesian.
+        (x, y) Coordinate in Cartesian space.
         """
         ...
 
-    def direction(self) -> None:
-        """In Degrees [0 to 360)"""
+    def direction(self) -> float:
+        """
+        @return
+        In Degrees [0 to 360)
+        """
         ...
 
     def speed(self) -> float: ...
