@@ -163,7 +163,6 @@ cdef class Polygon(Shape):
         cdef int i
 
         for i in range(self.vertex_count):
-            # TODO ?
             vers.append(Vector2d(self.plane, shape[i], 0, 0, 1))
             vers[-1].rotate(pi/2 + 2*pi/self.vertex_count * i)
 

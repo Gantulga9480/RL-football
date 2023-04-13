@@ -1,5 +1,4 @@
 from Game.graphic.cartesian import CartesianPlane, Vector2d
-from pygame import Surface
 
 
 class Shape:

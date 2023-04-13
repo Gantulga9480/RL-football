@@ -120,6 +120,7 @@ cdef class FreeBody(Body):
         self.velocity = Vector2d(plane, 1, 0, max_speed, 1)
         self.velocity.rotate(pi/2)
 
+    @cython.cdivision(True)
     cdef void USR_step(self):
         cdef double v_len = floor(self.velocity.mag() * 1000.0) / 1000.0
         cdef (double, double) xy
@@ -128,8 +129,8 @@ cdef class FreeBody(Body):
             if not self.is_attached:
                 xy = self.velocity.get_head()
                 _xy = self.velocity.unit_vector(1)
-                self.shape.plane.parent_vector.set_head((self.shape.plane.parent_vector.get_x() + xy[0] - _xy[0],
-                                                         self.shape.plane.parent_vector.get_y() + xy[1] - _xy[1]))
+                self.shape.plane.parent_vector.set_head((self.shape.plane.parent_vector.get_x() + (xy[0] - _xy[0]) / self.shape.plane.frame_rate,
+                                                         self.shape.plane.parent_vector.get_y() + (xy[1] - _xy[1]) / self.shape.plane.frame_rate))
             # Drag is applied even if it's attached to another body
             if self.drag_coef:
                 self.velocity.add((1-v_len) * self.drag_coef)
@@ -138,8 +139,7 @@ cdef class FreeBody(Body):
 
     @cython.cdivision(True)
     cpdef void accelerate(self, double speed):
-        if speed:
-            self.velocity.add(speed/self.shape.plane.frame_rate)
+        self.velocity.add(speed / self.shape.plane.frame_rate)
 
 @cython.optimize.unpack_method_calls(False)
 cdef class StaticBody(Body):
@@ -177,6 +177,7 @@ cdef class DynamicBody(Body):
             self.velocity.scale(self.friction_coef)
             self.shape.plane.parent_vector.set_head((self.shape.plane.parent_vector.head.x.num + -dxy[0], self.shape.plane.parent_vector.head.y.num + -dxy[1]))
 
+    @cython.cdivision(True)
     cdef void USR_step(self):
         cdef double v_len = floor(self.velocity.mag() * 1000.0) / 1000.0
         cdef (double, double) xy
@@ -185,8 +186,8 @@ cdef class DynamicBody(Body):
             if not self.is_attached:
                 xy = self.velocity.get_head()
                 _xy = self.velocity.unit_vector(1)
-                self.shape.plane.parent_vector.set_head((self.shape.plane.parent_vector.get_x() + xy[0] - _xy[0],
-                                                         self.shape.plane.parent_vector.get_y() + xy[1] - _xy[1]))
+                self.shape.plane.parent_vector.set_head((self.shape.plane.parent_vector.get_x() + (xy[0] - _xy[0]) / self.shape.plane.frame_rate,
+                                                         self.shape.plane.parent_vector.get_y() + (xy[1] - _xy[1]) / self.shape.plane.frame_rate))
             # Drag is applied even if it's attached to another body
             if self.drag_coef:
                 self.velocity.add((1-v_len) * self.drag_coef)
@@ -195,8 +196,7 @@ cdef class DynamicBody(Body):
 
     @cython.cdivision(True)
     cpdef void accelerate(self, double speed):
-        if speed:
-            self.velocity.add(speed/self.shape.plane.frame_rate)
+        self.velocity.add(speed / self.shape.plane.frame_rate)
 
 @cython.optimize.unpack_method_calls(False)
 cdef class Ray(FreeBody):
@@ -322,6 +322,7 @@ cdef class Ball(FreePolygonBody):
         self.is_free = True
         self.is_out = False
 
+    @cython.cdivision(True)
     cdef void USR_step(self):
         cdef double v_len = floor(self.velocity.mag() * 1000.0) / 1000.0
         cdef (double, double) xy
@@ -330,8 +331,8 @@ cdef class Ball(FreePolygonBody):
             if not self.is_attached:
                 xy = self.velocity.get_head()
                 _xy = self.velocity.unit_vector(1)
-                self.shape.plane.parent_vector.set_head((self.shape.plane.parent_vector.get_x() + xy[0] - _xy[0],
-                                                         self.shape.plane.parent_vector.get_y() + xy[1] - _xy[1]))
+                self.shape.plane.parent_vector.set_head((self.shape.plane.parent_vector.get_x() + (xy[0] - _xy[0]) / self.shape.plane.frame_rate,
+                                                         self.shape.plane.parent_vector.get_y() + (xy[1] - _xy[1]) / self.shape.plane.frame_rate))
             # Drag is applied even if it's attached to another body
             if self.drag_coef:
                 self.velocity.add((1-v_len) * self.drag_coef)
@@ -361,8 +362,8 @@ cdef class Player(DynamicPolygonBody):
 
     def __cinit__(self, *args, **kwargs):
         self.PLAYER_SIZE = 30
-        self.PLAYER_MAX_SPEED = 10
-        self.PLAYER_SPEED_BALL = 7
+        self.PLAYER_MAX_SPEED = 300
+        self.PLAYER_SPEED_BALL = 250
         self.PLAYER_MAX_TURN_RATE = 6
         self.PLAYER_MAX_FOV = 120
 
@@ -371,7 +372,7 @@ cdef class Player(DynamicPolygonBody):
                  int team_id,
                  CartesianPlane plane,
                  double ability_point = 0.95):
-        super().__init__(id, plane.createPlane(0, 0), (self.PLAYER_SIZE,) * 5, self.PLAYER_SPEED_BALL, 0.01, 0.3)
+        super().__init__(id, plane.createPlane(0, 0), (self.PLAYER_SIZE,) * 5, self.PLAYER_MAX_SPEED, 0.01, 0.3)
         self.team_id = team_id
         self.kicked = False
         self.has_ball = False
@@ -412,6 +413,7 @@ cdef class Player(DynamicPolygonBody):
             circle(self.shape.plane.window, (255, 0, 0), self.velocity.get_TAIL(), 10)
             circle(self.shape.plane.window, (0, 0, 0), self.velocity.get_TAIL(), 10, 2)
 
+    @cython.cdivision(True)
     cdef void USR_step(self):
         cdef double v_len = floor(self.velocity.mag() * 1000.0) / 1000.0
         cdef (double, double) xy
@@ -420,8 +422,8 @@ cdef class Player(DynamicPolygonBody):
             if not self.is_attached:
                 xy = self.velocity.get_head()
                 _xy = self.velocity.unit_vector(1)
-                self.shape.plane.parent_vector.set_head((self.shape.plane.parent_vector.get_x() + xy[0] - _xy[0],
-                                                         self.shape.plane.parent_vector.get_y() + xy[1] - _xy[1]))
+                self.shape.plane.parent_vector.set_head((self.shape.plane.parent_vector.get_x() + (xy[0] - _xy[0]) / self.shape.plane.frame_rate,
+                                                         self.shape.plane.parent_vector.get_y() + (xy[1] - _xy[1]) / self.shape.plane.frame_rate))
             # Drag is applied even if it's attached to another body
             if self.drag_coef:
                 self.velocity.add((1-v_len) * self.drag_coef)
@@ -457,8 +459,8 @@ cdef class GoalKeeper(DynamicPolygonBody):
 
     def __cinit__(self, *args, **kwargs):
         self.PLAYER_SIZE = 30
-        self.PLAYER_MAX_SPEED = 10
-        self.PLAYER_SPEED_BALL = 10
+        self.PLAYER_MAX_SPEED = 300
+        self.PLAYER_SPEED_BALL = 300
         self.PLAYER_MAX_TURN_RATE = 10
         self.PLAYER_MAX_FOV = 120
 
@@ -467,7 +469,7 @@ cdef class GoalKeeper(DynamicPolygonBody):
                  int team_id,
                  CartesianPlane plane,
                  double ability_point = 1):
-        super().__init__(id, plane.createPlane(0, 0), (self.PLAYER_SIZE,) * 5, self.PLAYER_SPEED_BALL, 0.01, 0.3)
+        super().__init__(id, plane.createPlane(0, 0), (self.PLAYER_SIZE,) * 5, self.PLAYER_MAX_SPEED, 0.01, 0.3)
         self.team_id = team_id
         self.kicked = False
         self.has_ball = False
@@ -509,6 +511,7 @@ cdef class GoalKeeper(DynamicPolygonBody):
             circle(self.shape.plane.window, (255, 0, 0), self.velocity.get_TAIL(), 10)
             circle(self.shape.plane.window, (0, 0, 0), self.velocity.get_TAIL(), 10, 2)
 
+    @cython.cdivision(True)
     cdef void USR_step(self):
         cdef double v_len = floor(self.velocity.mag() * 1000.0) / 1000.0
         cdef (double, double) xy
@@ -517,8 +520,8 @@ cdef class GoalKeeper(DynamicPolygonBody):
             if not self.is_attached:
                 xy = self.velocity.get_head()
                 _xy = self.velocity.unit_vector(1)
-                self.shape.plane.parent_vector.set_head((self.shape.plane.parent_vector.get_x() + xy[0] - _xy[0],
-                                                         self.shape.plane.parent_vector.get_y() + xy[1] - _xy[1]))
+                self.shape.plane.parent_vector.set_head((self.shape.plane.parent_vector.get_x() + (xy[0] - _xy[0]) / self.shape.plane.frame_rate,
+                                                         self.shape.plane.parent_vector.get_y() + (xy[1] - _xy[1]) / self.shape.plane.frame_rate))
             # Drag is applied even if it's attached to another body
             if self.drag_coef:
                 self.velocity.add((1-v_len) * self.drag_coef)
