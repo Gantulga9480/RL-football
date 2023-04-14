@@ -19,7 +19,7 @@ font = {'size': 18}
 matplotlib.rc('font', **font)
 plt.style.use('ggplot')
 
-env = SinglePlayerFootballParallel(title="Model evaluation", env_count=1)
+env = SinglePlayerFootballParallel(title="Model evaluation", env_count=1, random_ball=args.rb)
 if args.ac:
     agent = ActorCriticAgent(STATE_SPACE_SIZE, ACTION_SPACE_SIZE)
 else:
@@ -50,7 +50,7 @@ for path in paths:
     env.set_title(path)
     for _ in range(args.ne):
         rewards = []
-        state = env.reset(random_ball=args.rb)
+        state = env.reset()
         done = False
         while not done:
             state, reward, done = env.step(agent.policy(state))

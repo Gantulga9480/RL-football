@@ -192,7 +192,7 @@ class Football:
         if actions:
             for i, action in enumerate(actions):
                 speed = self.players[i].speed()
-                speed /= 150
+                speed /= 300
                 if action == GO_FORWARD:
                     self.players[i].accelerate(500)
                 elif action == STOP:
