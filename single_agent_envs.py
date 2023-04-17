@@ -190,6 +190,9 @@ class SinglePlayerFootballParallel(Game):
         for i in range(self.env_count):
             next_states[i], rewards[i], dones[i] = self.envs[i].step([actions[i]])
         self.loop_once()
+        for i in range(self.env_count):
+            for j in range(self.envs[i].sensors.__len__()):
+                self.envs[i].sensors[j].reset()
         return next_states, rewards, dones
 
     def onEvent(self, event):
