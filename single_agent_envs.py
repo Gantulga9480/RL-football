@@ -7,7 +7,7 @@ import numpy as np
 
 
 ACTION_SPACE_SIZE = 6
-STATE_SPACE_SIZE = 9  # + RAY_COUNT
+STATE_SPACE_SIZE = 9 + RAY_COUNT
 
 
 class RLFootball(Football):
@@ -37,7 +37,7 @@ class RLFootball(Football):
 
     def get_state(self):
         state = []
-        # state.extend(self.sensors[0].get_state())
+        state.extend(self.sensors[0].get_state())
         ball_pos = self.ball.position()
         ball_dir = self.ball.direction() / 360
         ball_spd = self.ball.speed() / BALL_SPEED_MAX
