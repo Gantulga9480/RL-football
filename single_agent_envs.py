@@ -28,7 +28,7 @@ class RLFootball(Football):
             self.done = True
         if self.teamRight.score:
             self.done = True
-            reward = 300
+            reward = self.fps * 10
         elif self.done and not self.teamRight.score:
             reward = -1
         else:
