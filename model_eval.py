@@ -35,7 +35,7 @@ if args.dir:
                     paths.append(f"{root}/{file}")
                 else:
                     paths.append(f"{root}\\{file}")
-    paths.sort()
+    paths.sort(key=lambda x: int(x.split('_')[-2]))
 if args.file:
     for file in args.file:
         if file.endswith(".pt"):

@@ -10,7 +10,7 @@ plt.style.use('ggplot')
 
 parser = argparse.ArgumentParser()
 parser.add_argument('rewards', nargs='+')
-parser.add_argument('--width', type=int, default=100)
+parser.add_argument('--width', type=int, default=1000)
 parser.add_argument("--average", action="store_true")
 parser.add_argument('--save', action="store_true")
 args = parser.parse_args()
@@ -39,7 +39,7 @@ if not args.average:
     fig1, ax1 = plt.subplots()
     for i, r in enumerate(avgs):
         # ax1.plot(rewards_list[i], alpha=0.2, c='r', linewidth="2")
-        ax1.plot(r, label=file_names[i], linewidth="5")
+        ax1.plot(r, label=file_names[i], linewidth="2")
     plt.title("Training curve")
     ax1.legend()
     ax1.set_xlabel("Episode")
