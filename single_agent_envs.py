@@ -105,57 +105,58 @@ class RLFootball(Football):
 
 class SinglePlayerFootball(Game):
 
-    def __init__(self, title: str = 'Single Agent train') -> None:
+    def __init__(self, title: str = 'Single Agent train', random_ball: bool = False) -> None:
         super().__init__()
         self.size = (1920, 1080)
         self.fps = 30
         self.set_window()
         self.set_title(title)
-        self.football: RLFootball = None
+        self.env: RLFootball = None
         self.team_size = 1
+        self.random_ball = random_ball
         self.setup()
 
     def setup(self):
-        self.football = RLFootball(self.window, self.size, self.fps, self.team_size, False)
+        self.env = RLFootball(self.window, self.size, self.fps, self.team_size, False)
+        self.env.reset(self.random_ball)
 
-    def reset(self, random_ball=False):
-        return self.football.reset(random_ball=random_ball)
+    def reset(self):
+        return self.env.reset(random_ball=self.random_ball)
 
     def step(self, action: int = NOOP):
-        return self.football.step([action])
+        next_state, reward, done = self.env.step([action])
+        self.loop_once()
+        return next_state, reward, done
 
     def loop(self):
-        actions = [NOOP for _ in range(self.team_size)]  # +2 goal keeper agents
-        idx = self.football.current_player
-        if self.keys[core.K_UP]:
-            actions[idx] = GO_FORWARD
-        if self.keys[core.K_DOWN]:
-            actions[idx] = STOP
-        if self.keys[core.K_LEFT]:
-            actions[idx] = TURN_LEFT
-        if self.keys[core.K_RIGHT]:
-            actions[idx] = TURN_RIGHT
-        if self.keys[core.K_f]:
-            actions[idx] = KICK
-        s, r, d = self.football.step(actions)
-        if d:
-            self.reset()
-
-    def loop_once(self):
-        super().loop_once()
-        return self.football.done
+        # actions = [NOOP for _ in range(self.team_size)]  # +2 goal keeper agents
+        # idx = self.env.current_player
+        # if self.keys[core.K_UP]:
+        #     actions[idx] = GO_FORWARD
+        # if self.keys[core.K_DOWN]:
+        #     actions[idx] = STOP
+        # if self.keys[core.K_LEFT]:
+        #     actions[idx] = TURN_LEFT
+        # if self.keys[core.K_RIGHT]:
+        #     actions[idx] = TURN_RIGHT
+        # if self.keys[core.K_f]:
+        #     actions[idx] = KICK
+        # s, r, d = self.env.step(actions)
+        # if d:
+        #     self.reset()
+        pass
 
     def onEvent(self, event):
         if event.type == core.KEYUP:
             if event.key == core.K_q:
                 self.running = False
-                self.football.done = True
+                self.env.done = True
             if event.key == core.K_SPACE:
                 self.rendering = not self.rendering
 
     def onRender(self):
         self.window.fill((255, 255, 255))
-        self.football.show()
+        self.env.show()
 
 
 class SinglePlayerFootballParallel(Game):
@@ -163,7 +164,7 @@ class SinglePlayerFootballParallel(Game):
     def __init__(self, env_count: int = 1, title: str = 'Single Agent train', random_ball: bool = False) -> None:
         super().__init__()
         self.size = (1920, 1080)
-        self.fps = 0
+        self.fps = 30
         self.set_window()
         self.set_title(title)
         self.env_count = env_count

@@ -33,13 +33,23 @@ if not args.average:
             continue
 
     avgs = []
+    maxs = []
+    mins = []
     for rewards in rewards_list:
         avgs.append(moving_average(rewards, args.width))
+        imax = []
+        imin = []
+        for i in range(len(rewards) - args.width + 1):
+            imax.append(np.max(rewards[i:i + args.width]))
+            imin.append(np.min(rewards[i:i + args.width]))
+        maxs.append(imax)
+        mins.append(imin)
 
     fig1, ax1 = plt.subplots()
     for i, r in enumerate(avgs):
-        # ax1.plot(rewards_list[i], alpha=0.2, c='r', linewidth="2")
-        ax1.plot(r, label=file_names[i], linewidth="2")
+        x = np.arange(0, len(r), 1)
+        ax1.plot(x, r, label=file_names[i], linewidth="2")
+        ax1.fill_between(x, y1=mins[i], y2=maxs[i], alpha=0.1, facecolor='#FF0000')
     plt.title("Training curve")
     ax1.legend()
     ax1.set_xlabel("Episode")

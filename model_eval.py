@@ -41,14 +41,16 @@ if args.file:
         if file.endswith(".pt"):
             paths.append(file)
 sim_scores = []
+success_rate = []
 for path in paths:
     if isinstance(agent, DeepQNetworkAgent):
         agent.model = torch.jit.load(path, map_location="cpu")
     else:
         agent.actor = torch.jit.load(path, map_location="cpu")
     ep_rewards = []
+    successfull_play_count = 0
     env.set_title(path)
-    for _ in range(args.ne):
+    for i in range(args.ne):
         rewards = []
         state = env.reset()
         done = False
@@ -56,15 +58,19 @@ for path in paths:
             state, reward, done = env.step(agent.policy(state))
             done = any(done)
             rewards.append(reward)
+            successfull_play_count += 1 if reward > 0 else 0
         ep_rewards.append(np.sum(rewards))
         if not env.running:
             break
+    success_rate.append(successfull_play_count / (i + 1) * 100)
     sim_scores.append(np.mean(ep_rewards))
 
-best_model = paths[np.argmax(sim_scores)]
-for n, s in zip(paths, sim_scores):
-    print(f"{n}: {s}")
-print(f"\n{best_model=}")
+for n, s, r in zip(paths, sim_scores, success_rate):
+    print(f"{n} - avg_score:{s}, success_rate:{r}")
+best_scored_model = paths[np.argmax(sim_scores)]
+best_success_rate_model = paths[np.argmax(success_rate)]
+print(f"\n{best_scored_model=}: {np.max(sim_scores)}")
+print(f"\n{best_success_rate_model=}: {np.max(success_rate)}")
 
 fig, ax = plt.subplots(1)
 if len(sim_scores) > 1:
