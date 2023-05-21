@@ -1,48 +1,78 @@
 from Game import Game, core
-from football import Football, STOP, GO_FORWARD, TURN_LEFT, TURN_RIGHT, KICK, NOOP
+from single_agent_envs import RLFootball, STATE_SPACE_SIZE, ACTION_SPACE_SIZE
+import numpy as np
 
 
-class Test(Game):
+class EnvPath(RLFootball):
 
-    def __init__(self) -> None:
+    def __init__(self, window, size, fps, team_size, full: bool = True) -> None:
+        super().__init__(window, size, fps, team_size, full)
+        self.player_path = []
+        self.player_speed = []
+
+    def get_state(self):
+        player_pos = self.plane.to_XY(self.players[0].position())
+        player_speed = self.players[0].speed()
+        self.player_speed.append(player_speed)
+        self.player_path.append(player_pos)
+        return super().get_state()
+
+    def reset(self, random_ball=False):
+        self.player_path = []
+        return super().reset(random_ball)
+
+
+class TestEnv(Game):
+
+    def __init__(self, env_count: int = 1, title: str = 'Single Agent train', random_ball: bool = False) -> None:
         super().__init__()
         self.size = (1920, 1080)
-        self.fps = 60
-        self.team_size = 3
+        self.fps = 30
         self.set_window()
-        self.set_title(self.title)
-        self.football = Football(self.window, self.size, self.fps, self.team_size, True)
+        self.set_title(title)
+        self.env_count = env_count
+        self.random_ball = random_ball
+        self.envs: list[EnvPath] = []
+        self.team_size = 1
+        self.setup()
 
-    def loop(self):
-        actions = [NOOP for _ in range(self.team_size * 2 + 2)]  # +2 goal keeper agents
-        idx = self.football.current_player
-        if self.keys[core.K_UP]:
-            actions[idx] = GO_FORWARD
-        if self.keys[core.K_DOWN]:
-            actions[idx] = STOP
-        if self.keys[core.K_LEFT]:
-            actions[idx] = TURN_LEFT
-        if self.keys[core.K_RIGHT]:
-            actions[idx] = TURN_RIGHT
-        if self.keys[core.K_SPACE]:
-            actions[idx] = KICK
-        self.football.step(actions)
-        if self.football.ball.is_out:
-            self.football.ball.reset((0, 0))
+    def setup(self):
+        for _ in range(self.env_count):
+            self.envs.append(EnvPath(self.window, self.size, 30, self.team_size, False))
+            self.envs[-1].reset(self.random_ball)
 
-    def onRender(self):
-        self.window.fill((255, 255, 255))
-        self.football.show()
+    def reset(self):
+        states = np.zeros((self.env_count, STATE_SPACE_SIZE))
+        for i in range(self.env_count):
+            states[i] = self.envs[i].reset(random_ball=self.random_ball)
+        return states
+
+    def step(self, actions: np.ndarray):
+        next_states = np.zeros((self.env_count, STATE_SPACE_SIZE))
+        rewards = np.zeros(self.env_count)
+        dones = np.zeros(self.env_count)
+        for i in range(self.env_count):
+            next_states[i], rewards[i], dones[i] = self.envs[i].step([actions[i]])
+        self.loop_once()
+        for i in range(self.env_count):
+            for j in range(self.envs[i].sensors.__len__()):
+                self.envs[i].sensors[j].reset()
+        return next_states, rewards, dones
 
     def onEvent(self, event):
         if event.type == core.KEYUP:
             if event.key == core.K_q:
                 self.running = False
-            if event.key == core.K_a:
-                if self.football.current_player < self.football.players.__len__() - 1:
-                    self.football.current_player += 1
-                else:
-                    self.football.current_player = 0
+                for env in self.envs:
+                    env.done = True
+            if event.key == core.K_SPACE:
+                self.rendering = not self.rendering
 
-
-Test().loop_forever()
+    def onRender(self):
+        self.window.fill((255, 255, 255))
+        for i in range(self.env_count):
+            self.envs[i].show()
+        core.draw.lines(self.window, (255, 0, 0), False, self.envs[0].player_path, width=3)
+        # for p in self.envs[0].player_path[1:]:
+        #     core.draw.line
+        #     core.draw.circle(self.window, (255, 0, 0), p, 3)
