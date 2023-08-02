@@ -9,17 +9,20 @@ class EnvPath(RLFootball):
         super().__init__(window, size, fps, team_size, full)
         self.player_path = []
         self.player_speed = []
+        self.ball_path = []
 
     def get_state(self):
-        player_pos = self.plane.to_XY(self.players[0].position())
-        player_speed = self.players[0].speed()
-        self.player_speed.append(player_speed)
-        self.player_path.append(player_pos)
+        self.ball_path.append(self.plane.to_XY(self.ball.position()))
+        self.player_path.append(self.plane.to_XY(self.players[0].position()))
+        self.player_speed.append(self.players[0].speed())
         return super().get_state()
 
     def reset(self, random_ball=False):
         self.player_path = []
-        return super().reset(random_ball)
+        self.player_speed = []
+        self.ball_path.append(self.plane.to_XY(self.ball.position()))
+        state = super().reset(random_ball)
+        return state
 
 
 class TestEnv(Game):
@@ -72,7 +75,8 @@ class TestEnv(Game):
         self.window.fill((255, 255, 255))
         for i in range(self.env_count):
             self.envs[i].show()
-        core.draw.lines(self.window, (255, 0, 0), False, self.envs[0].player_path, width=3)
-        # for p in self.envs[0].player_path[1:]:
-        #     core.draw.line
-        #     core.draw.circle(self.window, (255, 0, 0), p, 3)
+        # for pos in self.envs[0].ball_path:
+        #     core.draw.circle(self.window, (255, 0, 0), pos, 5)
+        # ball_path = [self.envs[0].ball_path[0], self.envs[0].plane.to_XY(self.envs[0].ball.position())]
+        # core.draw.lines(self.window, (255, 0, 0), False, ball_path, width=3)
+        core.draw.lines(self.window, (34, 177, 76), False, self.envs[0].player_path, width=3)

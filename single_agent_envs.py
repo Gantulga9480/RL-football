@@ -62,9 +62,11 @@ class RLFootball(Football):
         x = 300
         y = 0
         if random_ball:
-            y_lim = (self.plane.window_size[1] - GOAL_AREA_WIDTH) / 2
-            x = np.random.randint(0, self.plane.x_max - GOAL_AREA_WIDTH + 1)
-            y = np.random.randint(-y_lim, y_lim + 1)
+            # y_lim = (self.plane.window_size[1] - GOAL_AREA_WIDTH) / 2
+            # x = np.random.randint(0, self.plane.x_max - GOAL_AREA_WIDTH + 1)
+            # y = np.random.randint(-y_lim, y_lim + 1)
+            x = 100
+            y = 200
         self.ball.reset((x, y))
         self.teamRight.reset()
         self.engine.step()

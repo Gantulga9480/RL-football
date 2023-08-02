@@ -25,7 +25,7 @@ else:
 
 ep_rewards = []
 
-for i in range(1):
+for _ in range(1000):
     rewards = []
     state = env.reset()
     done = False
@@ -36,8 +36,21 @@ for i in range(1):
     ep_rewards.append(np.sum(rewards))
     if not env.running:
         break
+    # print(env.envs[0].player_speed)
+    plt.plot(env.envs[0].player_speed)
+    plt.show()
 
-# env.loop_forever()
+env.envs[0].ball_path.pop(0)
+env.envs[0].ball_path.pop(0)
 
-plt.plot(env.envs[0].player_speed)
+pos = []
+for item in env.envs[0].ball_path:
+    pos.append(item[1])
+
+pos = (np.array(pos) - 540)
+pos /= pos.max()
+
+plt.plot(pos)
 plt.show()
+
+env.loop_forever()

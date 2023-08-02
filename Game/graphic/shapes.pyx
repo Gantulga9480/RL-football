@@ -81,6 +81,8 @@ cdef class Line(Shape):
         self.vertex_count = 1
         self.vertices = np.array([Vector2d(self.plane, length, 0, 0, 1)], dtype=Vector2d)
 
+        self.update()
+
     @cython.wraparound(False)
     @cython.boundscheck(False)
     @cython.nonecheck(False)
@@ -131,6 +133,8 @@ cdef class Rectangle(Shape):
 
         self.vertices = np.array(vers, dtype=Vector2d)
 
+        self.update()
+
 @cython.optimize.unpack_method_calls(False)
 cdef class Triangle(Shape):
 
@@ -151,6 +155,8 @@ cdef class Triangle(Shape):
 
         self.vertices = np.array(vers, dtype=Vector2d)
 
+        self.update()
+
 @cython.optimize.unpack_method_calls(False)
 cdef class Polygon(Shape):
 
@@ -170,3 +176,5 @@ cdef class Polygon(Shape):
             vers[-1].rotate(pi/2 + 2*pi/self.vertex_count * i)
 
         self.vertices = np.array(vers, dtype=Vector2d)
+
+        self.update()

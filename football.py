@@ -150,6 +150,8 @@ class TeamRight:
                     break
             dr = np.random.random() * np.pi * 2
             player.reset((x, y), dr)
+            player.has_ball = False
+            player.kicked = False
 
 
 class Football:
