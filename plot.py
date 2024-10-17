@@ -3,10 +3,10 @@ import matplotlib
 import matplotlib.pylab as plt
 import argparse
 
-font = {'weight': 'normal', 'size': 18}
-matplotlib.rc('font', **font)
-plt.style.use('ggplot')
-# matplotlib.rcParams['font.sans-serif'] = ["DejaVu Sans Mono", 'DejaVu Sans', 'Lucida Grande', 'Verdana']
+# font = {'weight': 'normal', 'size': 12}
+# matplotlib.rc('font', **font)
+plt.style.use('seaborn-v0_8')
+# plt.style.use('science')
 
 parser = argparse.ArgumentParser()
 parser.add_argument('rewards', nargs='+')
@@ -46,10 +46,15 @@ if not args.average:
         mins.append(imin)
 
     fig1, ax1 = plt.subplots()
+    fig1.set_figwidth(18.75)
+    fig1.set_figheight(12.5)
+    fig1.tight_layout(h_pad=1)
     for i, r in enumerate(avgs):
         x = np.arange(0, len(r), 1)
-        ax1.plot(x, r, label=file_names[i], linewidth="2")
-        ax1.fill_between(x, y1=mins[i], y2=maxs[i], alpha=0.1, facecolor='#FF0000')
+        # ax1.plot(x, r, label=file_names[i], linewidth="2", c='#55a868')
+        ax1.fill_between(x, y1=mins[i], y2=maxs[i], alpha=0.3)
+        ax1.plot(x, r, label=file_names[i])
+        ax1.axhline(0, c='r')
     plt.title("Training curve")
     ax1.legend()
     ax1.set_xlabel("Episode")
